@@ -11,7 +11,7 @@ Ein inoffizielles ATmega1284P-Laborboard im Browser: Steckbrett verdrahten, das 
 
 ### Anleitung
 
-**1. Öffnen:** https://tequilaar.github.io/pp-virtual-board/ in Chrome, Edge, Firefox oder Safari am Computer. Die Oberfläche ist auf Deutsch, oben rechts lässt sich Englisch wählen.
+**1. Öffnen:** https://tequilaar.github.io/pp-virtual-board/ in Chrome, Edge, Firefox oder Safari am Computer. Die Oberfläche ist auf Deutsch, oben rechts lassen sich Englisch und Chinesisch wählen.
 
 **2. Schaltung aufbauen.** Links ein Werkzeug wählen, dann Löcher anklicken:
 - Zweibeinige Bauteile (Draht, Widerstand, LED, Taster, Kondensator, Quarz): erstes Loch, dann zweites Loch. Bei der LED zuerst die Anode (langes Bein).
@@ -52,7 +52,7 @@ An unofficial ATmega1284P lab board that runs in the browser: wire a breadboard,
 
 ### Tutorial
 
-**1. Open** https://tequilaar.github.io/pp-virtual-board/ in desktop Chrome, Edge, Firefox or Safari. The UI is German by default; switch to English at the top right.
+**1. Open** https://tequilaar.github.io/pp-virtual-board/ in desktop Chrome, Edge, Firefox or Safari. The UI is German by default; switch to English or Chinese at the top right.
 
 **2. Build the circuit.** Pick a tool on the left, then click holes:
 - Two-leg parts (wire, resistor, LED, push button, capacitor, crystal): first hole, then second hole. For an LED, click the anode (long leg) first.
@@ -94,7 +94,7 @@ Unofficial project, not affiliated with any university or course. Some model par
 ### 使用教程
 
 **1. 打开**
-用电脑上的 Chrome、Edge、Firefox 或 Safari 打开 **https://tequilaar.github.io/pp-virtual-board/** 。界面默认德语，右上角可切换英语。
+用电脑上的 Chrome、Edge、Firefox 或 Safari 打开 **https://tequilaar.github.io/pp-virtual-board/** 。界面默认德语，右上角可切换为英语或中文。
 
 **2. 搭电路**
 左侧选工具，然后在面包板上点孔：
