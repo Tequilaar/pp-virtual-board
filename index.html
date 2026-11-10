@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='4' width='20' height='24' rx='2' fill='%232a2a2c'/%3E%3Cg fill='%23c0c4c9'%3E%3Crect x='2' y='7' width='4' height='3'/%3E%3Crect x='2' y='14' width='4' height='3'/%3E%3Crect x='2' y='21' width='4' height='3'/%3E%3Crect x='26' y='7' width='4' height='3'/%3E%3Crect x='26' y='14' width='4' height='3'/%3E%3Crect x='26' y='21' width='4' height='3'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='4' fill='%2334d058'/%3E%3C/svg%3E" />
+  <title>PP Virtual Board</title>
+</head>
+<body>
+  <header>
+    <div class="brand"><b data-t="title"></b> <span class="unofficial" data-t="unofficial"></span></div>
+    <div class="actions">
+      <label class="filebtn"><input id="program-file" type="file" accept=".elf,.hex" hidden /><span data-t="loadProgram"></span></label>
+      <button id="undo" data-t="undo" disabled title="⌘/Strg+Z"></button>
+      <button id="redo" data-t="redo" disabled title="⌘/Strg+Y"></button>
+      <button id="toggle-3d" data-t="view3d"></button>
+      <button id="run"></button>
+      <button id="restart" data-t="restart"></button>
+      <span class="sep"></span>
+      <button id="export" data-t="export"></button>
+      <label class="check"><input id="include-program" type="checkbox" checked /> <span data-t="includeProgram"></span></label>
+      <label class="filebtn"><input id="wiring-file" type="file" accept=".json" hidden /><span data-t="import"></span></label>
+      <button id="clear" data-t="clear"></button>
+      <span class="sep"></span>
+      <button id="zoom-out" aria-label="zoom out">−</button><span id="zoom-level">130 %</span><button id="zoom-in" aria-label="zoom in">+</button>
+      <select id="lang" aria-label="Sprache / language"><option value="de">Deutsch</option><option value="en">English</option></select>
+    </div>
+  </header>
+  <main>
+    <aside class="tools">
+      <h2 data-t="tools"></h2>
+      <button data-tool="select" data-t="select"></button>
+      <button data-tool="power" data-t="power"></button>
+      <button data-tool="mcu" data-t="mcu"></button>
+      <button data-tool="wire" data-t="wire"></button>
+      <select id="wire-color" aria-label="wire colour">
+        <option value="#2f7de1" data-t="blue"></option><option value="#e5484d" data-t="red"></option><option value="#30a46c" data-t="green"></option>
+        <option value="#f5d90a" data-t="yellow"></option><option value="#1c1c1c" data-t="black"></option><option value="#f76b15" data-t="orange"></option>
+      </select>
+      <button data-tool="resistor" data-t="resistor"></button>
+      <select id="res-value" aria-label="resistance">
+        <option value="220">220 Ω</option><option value="330" selected>330 Ω</option><option value="1000">1 kΩ</option>
+        <option value="4700">4,7 kΩ</option><option value="10000">10 kΩ</option>
+      </select>
+      <button data-tool="led" data-t="led"></button>
+      <select id="led-color" aria-label="LED colour">
+        <option value="green" data-t="green"></option><option value="red" data-t="red"></option><option value="yellow" data-t="yellow"></option>
+      </select>
+      <button data-tool="button" data-t="button"></button>
+      <button data-tool="capacitor" data-t="capacitor"></button>
+      <select id="cap-value" aria-label="capacitance">
+        <option value="3.3e-11">33 pF</option><option value="1e-7">100 nF</option><option value="1e-6">1 µF</option>
+      </select>
+      <button data-tool="crystal" data-t="crystal"></button>
+      <button data-tool="encoder" data-t="encoder"></button>
+      <button data-tool="servo" data-t="servo"></button>
+      <button data-tool="lcd" data-t="lcd"></button>
+      <button data-tool="jtag" data-t="jtag"></button>
+      <button data-tool="meter" data-t="meter"></button>
+    </aside>
+    <section id="board-wrap"></section>
+    <section id="view3d" hidden></section>
+    <aside class="panel">
+      <h2 data-t="status"></h2>
+      <div id="status"></div>
+      <button id="replace-fuse" data-t="replaceFuse" hidden></button>
+      <label class="check"><input id="bounce" type="checkbox" checked /> <span data-t="bounce"></span></label>
+      <label class="check"><input id="jtag-required" type="checkbox" /> <span data-t="jtagRequired"></span></label>
+      <div id="servo-status"></div>
+      <div id="meter-status"></div>
+      <h2 data-t="warnings"></h2>
+      <ul id="warnings"></ul>
+    </aside>
+  </main>
+  <footer><span id="hint"></span><span id="hover"></span></footer>
+  <script type="module" src="/src/ui/main.ts"></script>
+</body>
+</html>

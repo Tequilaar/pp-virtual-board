@@ -1,0 +1,28 @@
+{
+  "name": "pp-virtual-board",
+  "version": "1.0.0",
+  "description": "Unofficial browser-based ATmega1284P virtual lab board",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "vite --port 5174 --strictPort",
+    "build": "vite build",
+    "test:e2e": "playwright test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "avr8js": "^0.21.1",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.6",
+    "@types/three": "^0.187.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0"
+  },
+  "private": true
+}

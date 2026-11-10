@@ -1,0 +1,9 @@
+node_modules/
+build/
+dist/
+*.pdf
+test-results/
+playwright-report/
+.tmp/
+tests/zz_*
+e2e/zz_*

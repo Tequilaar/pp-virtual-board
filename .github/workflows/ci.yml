@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit:
+    name: Unit tests (Ubuntu, avr-gcc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install AVR toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-avr avr-libc binutils-avr
+      - run: avr-gcc --version | head -1
+      - run: npm ci
+      - run: npx tsc -p .
+      - run: npm test
+      - name: Keep the compiled test firmware for the browser jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: build/firmware
+
+  browsers:
+    name: Browsers on ${{ matrix.os }}
+    needs: unit
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      PP_PREBUILT_FIRMWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: build/firmware
+      - run: npm ci
+      - name: Install Playwright browsers (Firefox, WebKit; Chrome/Edge come with the runner)
+        run: npx playwright install --with-deps firefox webkit
+      - run: npx playwright test
+      - name: Screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.os }}
+          path: test-results
+          if-no-files-found: ignore

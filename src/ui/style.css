@@ -1,0 +1,111 @@
+:root {
+  --bg: #f4f2ee; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #dcd9d2;
+  --accent: #2f6fdb; --ok: #1f8a4c; --bad: #c4362c;
+  --bb: #f7f6f2; --bb-block: #fbfaf7; --hole: #3b3a37;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink);
+}
+* { box-sizing: border-box; }
+body { margin: 0; height: 100vh; display: grid; grid-template-rows: auto 1fr auto; background: var(--bg); }
+header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand b { font-size: 15px; }
+.unofficial { color: var(--muted); font-size: 12px; margin-left: 6px; }
+.actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.sep { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+button, .filebtn, select { font: inherit; font-size: 13px; padding: 5px 10px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; cursor: pointer; color: var(--ink); }
+button:hover, .filebtn:hover { border-color: var(--accent); }
+.check { font-size: 13px; color: var(--muted); display: flex; gap: 4px; align-items: center; }
+main { display: grid; grid-template-columns: 170px 1fr 260px; min-height: 0; }
+.tools, .panel { background: var(--panel); padding: 10px; overflow: auto; border-right: 1px solid var(--line); }
+.panel { border-right: 0; border-left: 1px solid var(--line); font-size: 13px; }
+.tools { display: flex; flex-direction: column; gap: 6px; }
+.tools select { margin: -2px 0 4px 12px; padding: 3px 6px; font-size: 12px; }
+.tools button { text-align: left; }
+.tools button.active { background: var(--accent); color: white; border-color: var(--accent); }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 6px 0 8px; }
+#status div { padding: 2px 0; }
+.ok { color: var(--ok); font-weight: 600; }
+.bad { color: var(--bad); font-weight: 600; }
+#warnings { padding-left: 18px; margin: 0; }
+#warnings li { margin-bottom: 6px; color: var(--bad); }
+#warnings li.none { color: var(--muted); list-style: none; margin-left: -18px; }
+#replace-fuse { margin: 8px 0; border-color: var(--bad); color: var(--bad); }
+#board-wrap { overflow: auto; padding: 12px; }
+footer { display: flex; justify-content: space-between; gap: 12px; padding: 6px 14px; font-size: 12.5px; color: var(--muted); background: var(--panel); border-top: 1px solid var(--line); }
+#hover { font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* board */
+svg.board { height: auto; display: block; user-select: none; }
+#zoom-level { font-size: 12px; color: var(--muted); min-width: 40px; text-align: center; }
+.bb-base { fill: #e9e6df; }
+.bb-block, .bb-rail { fill: var(--bb-block); stroke: #e1ddd3; }
+.rail-plus { stroke: #e5484d; stroke-width: 1.2; }
+.rail-minus { stroke: #2f6fdb; stroke-width: 1.2; }
+.rail-label { font-size: 11px; font-weight: 700; text-anchor: middle; }
+.rail-label.plus { fill: #e5484d; } .rail-label.minus { fill: #2f6fdb; }
+.row-label, .col-label { font-size: 7.5px; fill: #8c887f; text-anchor: middle; }
+.hole { fill: var(--hole); cursor: crosshair; }
+.hole.strip { fill: #2f6fdb; }
+.hole.picked { fill: #f76b15; }
+.preview { stroke: #f76b15; stroke-width: 3; stroke-dasharray: 4 3; stroke-linecap: round; pointer-events: none; }
+.part { cursor: pointer; }
+.part.selected { filter: drop-shadow(0 0 3px #2f6fdb) drop-shadow(0 0 2px #2f6fdb); }
+.leg { stroke: #9aa0a6; stroke-width: 1.6; }
+.wire-body { stroke-width: 4; stroke-linecap: round; opacity: .92; }
+.wire-end { fill: #c9ccd1; stroke: #555; stroke-width: .8; }
+.res-body { fill: #e3c79a; stroke: #a6895c; stroke-width: .8; }
+.part-label { font-size: 7.5px; text-anchor: middle; fill: #4a4a4a; }
+.tiny-label { font-size: 6.5px; text-anchor: middle; fill: #fff; pointer-events: none; }
+.tiny-label.dark { fill: #333; }
+.pol-label { font-size: 9px; font-weight: 700; text-anchor: middle; fill: #c4362c; }
+.led-body { stroke: rgba(0,0,0,.35); stroke-width: .8; }
+.led-shade { fill: #000; pointer-events: none; }
+.led-glow { pointer-events: none; }
+.led-burnt { stroke: #000; stroke-width: 2; }
+.btn-body { fill: #2b2b2b; } .btn-cap { fill: #6d6d6d; stroke: #111; }
+.part-button.pressed .btn-cap { fill: #3b3b3b; r: 4.8; }
+.cap-body { fill: #c98b3a; stroke: #8a5a1f; stroke-width: .7; }
+.xtal-body { fill: #cfd3d8; stroke: #7d838a; stroke-width: .8; }
+.chip-body { fill: #2a2a2c; } .chip-notch { fill: #4a4a4d; }
+.chip-pin { fill: #c0c4c9; }
+.pin-label { font-size: 5.2px; text-anchor: middle; fill: #e8e8e8; pointer-events: none; }
+.chip-name { font-size: 5.5px; opacity: .7; fill: #9a9aa0; text-anchor: middle; letter-spacing: .08em; pointer-events: none; }
+.pin1-dot { fill: #e8e8e8; }
+.part-mcu.chip-running .chip-name { fill: #7fd19b; }
+.pwr-body { fill: #1f7a3f; stroke: #135a2c; }
+.pwr-usb { fill: #b9bec4; }
+.pwr-led1 { fill: #2ee66b; }
+.pwr-led2 { fill: #234a2f; }
+.part-power.out-on .pwr-led2 { fill: #ff4040; }
+.pwr-switch { fill: #e6e6e6; cursor: pointer; } .pwr-switch-knob { fill: #333; pointer-events: none; transition: transform .1s; }
+.part-power:not(.switch-on) .pwr-switch-knob { transform: translateY(14px); }
+.pwr-fuse { fill: #f5d90a; }
+.part-power.fuse-blown .pwr-fuse { fill: #5a4a00; }
+.pwr-pin { stroke: #c0c4c9; stroke-width: 3; }
+
+.enc-body { fill: #2d2f33; stroke: #111; }
+.enc-knob-face { fill: #a9afb7; stroke: #555; stroke-width: 1; cursor: pointer; }
+.part-encoder.pressed .enc-knob-face { fill: #7d838a; }
+.enc-mark { stroke: #222; stroke-width: 2.4; stroke-linecap: round; pointer-events: none; }
+.enc-arrow circle { fill: #fff; stroke: #2f6fdb; cursor: pointer; }
+.enc-arrow text { font-size: 10px; text-anchor: middle; fill: #2f6fdb; pointer-events: none; }
+.pin-tag { font-size: 6.5px; text-anchor: middle; fill: #555; pointer-events: none; }
+.servo-cable { fill: none; stroke-width: 2.4; }
+.servo-body { fill: #1f5fbf; stroke: #123c7a; }
+.servo-hub { fill: #e8e8e8; }
+.servo-arm-shape { fill: #f4f4f4; stroke: #999; stroke-width: .8; }
+.servo-screw { fill: #bbb; }
+#servo-status { font-size: 12.5px; margin: 6px 0; }
+.panel .check { margin: 8px 0; }
+
+.lcd-pcb { fill: #1d6b37; stroke: #0f4421; fill-opacity: .88; }
+.lcd-bezel { fill: #111; }
+
+#view3d { position: relative; min-height: 0; overflow: hidden; }
+#view3d canvas { display: block; width: 100%; height: 100%; }
+main.mode-3d #board-wrap { display: none; }
+main.mode-3d .tools button[data-tool] { opacity: .45; pointer-events: none; }
+.jtag-body { fill: #1b1b1d; }
+#meter-status { font-size: 13px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+#meter-status b { font-size: 16px; }
+.probe-red { fill: #e5484d; stroke: #7a1515; } .probe-black { fill: #222; stroke: #000; }
+.probe-line { stroke: #888; stroke-dasharray: 3 3; }
