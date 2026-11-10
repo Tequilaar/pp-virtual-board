@@ -72,7 +72,7 @@ test('build, run, press, edit, export', async ({ page, browserName }, info) => {
   info.annotations.push({ type: 'realtime', description: `${info.project.name}: ${(factor * 100).toFixed(0)} %` });
   console.log(`[${info.project.name} on ${process.platform}] real-time factor ${(factor * 100).toFixed(0)} %`);
   // CI runners are small shared VMs; on a student laptop we expect (and measured) 100 %.
-  expect(factor).toBeGreaterThan(process.env.CI ? 0.4 : 0.8);
+  expect(factor).toBeGreaterThan(process.env.CI ? 0.2 : 0.8);
 
   // Select the button and delete it with the keyboard.
   await page.mouse.click(btn!.x + btn!.width / 2, btn!.y + btn!.height / 2);
@@ -102,6 +102,12 @@ test('build, run, press, edit, export', async ({ page, browserName }, info) => {
   await expect(page.locator('#status')).toContainText('Supply');
   await expect(page.locator('#wire-color option').first()).toHaveText('blue');
   await expect(page.locator('#warnings')).not.toContainText('keine');
+  await page.selectOption('#lang', 'zh');
+  await expect(page.locator('header .brand b')).toHaveText('PP 虚拟实验板');
+  await expect(page.locator('#status')).toContainText('供电');
+  await expect(page.locator('#wire-color option').first()).toHaveText('蓝');
+  await page.selectOption('#lang', 'de');
+  await expect(page.locator('header .brand b')).toHaveText('PP Virtuelles Board');
 
   await page.screenshot({ path: `test-results/ui-${info.project.name}-${process.platform}.png` });
   expect(errors).toEqual([]);

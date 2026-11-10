@@ -819,7 +819,7 @@ $('undo').addEventListener('click', undo);
 $('redo').addEventListener('click', redo);
 $('bounce').addEventListener('change', (e) => (sim.bounce = (e.target as HTMLInputElement).checked));
 $('lang').addEventListener('change', (e) => {
-  setLang((e.target as HTMLSelectElement).value as 'de' | 'en');
+  setLang((e.target as HTMLSelectElement).value as 'de' | 'en' | 'zh');
   applyTexts();
   renderStatus(realtime);
 });

@@ -179,10 +179,100 @@ const en: Record<Key, string> = {
   hint3d: '3D view: drag to rotate, mouse wheel to zoom, right button to pan. Wiring happens in the 2D view.',
 };
 
-let lang: 'de' | 'en' = 'de';
-export const setLang = (l: 'de' | 'en') => (lang = l);
+const zh: Record<Key, string> = {
+  title: 'PP 虚拟实验板',
+  unofficial: '非官方学习工具',
+  loadProgram: '载入程序 (.elf/.hex)',
+  noProgram: '未载入程序',
+  run: '运行',
+  pause: '暂停',
+  restart: '重新启动',
+  export: '导出接线',
+  import: '导入接线',
+  includeProgram: '一并保存程序',
+  clear: '全部移除',
+  confirmClear: '要移除板上的所有元件吗？',
+  tools: '工具',
+  select: '选择',
+  wire: '导线',
+  resistor: '电阻',
+  led: 'LED',
+  button: '按钮',
+  capacitor: '电容',
+  crystal: '晶振',
+  mcu: 'ATmega1284P',
+  power: '电源板',
+  status: '状态',
+  powered: '供电',
+  clock: '时钟（晶振）',
+  resetPin: 'RESET',
+  program: '程序',
+  runningState: '运行中',
+  yes: '是',
+  no: '否',
+  low: '低（复位中）',
+  high: '高',
+  realtime: '实时速度',
+  simTime: '模拟时间',
+  warnings: '提示',
+  none: '无',
+  replaceFuse: '更换保险丝',
+  hintSelect: '点击选中，拖动移动（拖动元件脚端只更换这一只脚）。Delete 删除，R 旋转芯片，⌘/Ctrl+Z 撤销。',
+  hintTwoLeg: '先点第一个孔，再点第二个孔。Esc 取消。',
+  hintLed: '先点正极（+，长脚），再点负极。',
+  hintMcu: '在 E 行或 F 行点一个孔：芯片左端放在这里。R 旋转（缺口在左/右）。',
+  hintPower: '点击面包板，把电源板插到最上方的电源轨上。',
+  occupied: '这个孔已经被占用。',
+  sameHole: '两只脚插在同一个孔里。',
+  mcuPlace: '芯片：需要 E 行或 F 行、第 1–41 列的孔，且 40 个孔都空闲。',
+  onlyOne: '板上只能有一个。',
+  switchS: '开关 S',
+  pin: '引脚',
+  blue: '蓝', red: '红', green: '绿', yellow: '黄', black: '黑', orange: '橙',
+  floatingNet: '悬空（电平不确定）',
+  encoder: '旋转编码器',
+  servo: '舵机',
+  hintEncoder: '点 A 脚的孔：A、C、B 依次排开，按键脚在上方 3 行。旋转：点箭头或在旋钮上滚动鼠标滚轮；按住旋钮 = 按下按键。',
+  hintServo: '点棕色线（GND）的孔：红色（+5 V）和橙色（信号）依次排在右边。',
+  encoderPlace: '编码器：5 只脚都要插在空闲的插接区孔上。',
+  servoPlace: '舵机：需要相邻的三个空孔。',
+  bounce: '模拟触点抖动',
+  starting: '启动中（上电延时）',
+  servos: '舵机',
+  pulse: '脉宽',
+  lcd: 'LCD 2×16',
+  hintLcd: '点 1 脚（VSS）的孔：显示屏的 16 只脚在这一行依次排开。',
+  lcdPlace: 'LCD：需要同一行插接区里相邻的 16 个空孔。',
+  jtag: 'JTAG 排针',
+  hintJtag: '在 E 行点一个孔：排针的 1/2 脚（1 GND、2 TDI … 9 GND、10 TCK）在这一列，跨过中间槽。',
+  jtagPlace: 'JTAG 排针：1 脚在 E 行，需要 E/F 两行共 10 个空孔。',
+  jtagRequired: '只允许通过 JTAG 编程器烧录（与实验室一致）',
+  jtagNoHeader: '烧录失败：板上没有 JTAG 排针。',
+  jtagFailed: '烧录失败（Atmel-ICE 连不上芯片）：',
+  jtagOk: '已通过 JTAG 烧录。',
+  meter: '万用表',
+  hintMeter: '先点红表笔的孔，再点黑表笔的孔。再点一次重新开始。',
+  meterOpen: '开路',
+  no3d: '3D 视图不可用：浏览器不支持 WebGL 2（请检查显卡驱动或开启硬件加速）。2D 视图不受影响。',
+  meterCleared: '表笔已移除。',
+  undo: '↶ 撤销',
+  redo: '↷ 重做',
+  rotatedLeft: '方向：缺口在左（1 脚在左下）。',
+  rotatedRight: '方向：缺口在右（1 脚在右上）。',
+  rotateHint: 'R 旋转芯片：先选中芯片，或在放置时按 R。',
+  moveFailed: '无法移动到这里：',
+  moveOffBoard: '元件会超出面包板，或不再跨在中间槽上。',
+  powerFixed: '电源板固定插在最上方的电源轨上。',
+  view3d: '3D 视图',
+  view2d: '2D 视图（接线）',
+  hint3d: '3D 视图：拖动旋转，滚轮缩放，右键平移。接线请在 2D 视图中进行。',
+};
+
+let lang: 'de' | 'en' | 'zh' = 'de';
+export type Lang = 'de' | 'en' | 'zh';
+export const setLang = (l: Lang) => (lang = l);
 export const getLang = () => lang;
-export const t = (k: Key): string => (lang === 'de' ? de[k] : en[k]);
+export const t = (k: Key): string => (lang === 'de' ? de[k] : lang === 'zh' ? zh[k] : en[k]);
 
 /** German wording of simulator warnings, by code prefix; {name} is filled from the warning's params. */
 const WARN_DE: Record<string, string> = {
@@ -207,18 +297,44 @@ const WARN_DE: Record<string, string> = {
   'lcd-short-power-off': 'LCD {id}: Versorgung kürzer als 1 ms aus – Power-On-Reset nicht garantiert.',
 };
 
+const WARN_ZH: Record<string, string> = {
+  fuse: '电源板的保险丝烧断了（电流超过 0.5 A）：请检查短路。',
+  'power-off': '电源板的开关 S 处于关闭状态。',
+  'no-vcc': '芯片的 VCC（第 10 脚）没有供电。',
+  'no-gnd': '芯片的 GND（第 11/31 脚）没有接地。',
+  'one-gnd': '两个 GND 脚（11、31）只接了一个。',
+  'no-crystal': 'XTAL1 和 XTAL2 之间没有晶振：芯片没有时钟，不会运行。',
+  'no-avcc': 'AVCC（第 30 脚）没有接 5 V：端口 A 无法工作。',
+  burnt: 'LED {id} 因电流过大烧坏（忘了串电阻？）。',
+  overload: '{pin} 输出 {mA} mA，超过 40 mA 的最大允许值。',
+  floating: '{pin} 是没有上拉的输入，且没有任何东西驱动它：电平不确定。',
+  undefined: '{pin} 的电压为 {v} V，处在输入阈值之间（1.5 V / 3 V）。',
+  'servo-range': '舵机 {id}：脉宽 {us} µs 超出 500–2500 µs，舵机停在极限位置。',
+  'servo-power': '舵机 {id} 的红线和棕线之间没有 5 V 供电。',
+  'lcd-enable-high': 'LCD {id}：E 的高电平短于 450 ns（数据手册 PWEH）。',
+  'lcd-enable-cycle': 'LCD {id}：E 的两次上升沿间隔不足 1000 ns（数据手册 tcycE）。',
+  'lcd-address-setup': 'LCD {id}：RS/RW 在 E 上升沿前不足 140 ns 才改变（数据手册 tAS）。',
+  'lcd-data-setup': 'LCD {id}：数据在 E 下降沿前不足 195 ns 才改变（数据手册 tDSW）。',
+  'lcd-write-while-busy': 'LCD {id}：在 Busy-Flag 置位时发送了命令或字符，显示屏忽略了它。',
+  'lcd-short-power-off': 'LCD {id}：断电不足 1 ms，上电复位不一定可靠。',
+};
+
 export function warningText(code: string, english: string, params: Record<string, string> = {}): string {
-  if (lang !== 'de') return english;
-  const tpl = WARN_DE[code.split(':')[0]];
+  if (lang === 'en') return english;
+  const tpl = (lang === 'zh' ? WARN_ZH : WARN_DE)[code.split(':')[0]];
   return tpl ? tpl.replace(/\{(\w+)\}/g, (_, k: string) => params[k] ?? '') : english;
 }
 
 /** Wording of a JTAG problem code from BoardSim.jtagCheck(). */
 export function jtagProblem(code: string): string {
-  if (code === 'power') return lang === 'de' ? 'keine Zielspannung (VTref)' : 'no target voltage (VTref)';
-  if (code.startsWith('GND')) return lang === 'de' ? `Pin ${code.slice(3)} (GND) nicht an Masse` : `pin ${code.slice(3)} (GND) not grounded`;
+  const pick = (de: string, en: string, zh: string) => (lang === 'de' ? de : lang === 'zh' ? zh : en);
+  if (code === 'power') return pick('keine Zielspannung (VTref)', 'no target voltage (VTref)', '没有目标电压（VTref）');
+  if (code.startsWith('GND')) {
+    const n = code.slice(3);
+    return pick(`Pin ${n} (GND) nicht an Masse`, `pin ${n} (GND) not grounded`, `第 ${n} 脚（GND）没有接地`);
+  }
   const [sig, pin] = code.split('-');
-  return lang === 'de' ? `${sig} nicht mit ${pin} verbunden` : `${sig} not connected to ${pin}`;
+  return pick(`${sig} nicht mit ${pin} verbunden`, `${sig} not connected to ${pin}`, `${sig} 没有接到 ${pin}`);
 }
 
 /** Wording of a wiring-file or placement problem (see circuit/validate.ts). */
@@ -246,7 +362,18 @@ export function problemText(p: { code: string; part: string; detail?: string }):
     'pins-share-strip': `Part ${p.part}: several pins in the same contact strip (they would be shorted)`,
     'only-one': `Part ${p.part}: there is only one of these on the board`,
   };
-  return (lang === 'de' ? de : en)[p.code] ?? `${p.part}: ${p.code}`;
+  const zh: Record<string, string> = {
+    'unknown-kind': `元件 ${p.part}：未知类型“${d}”`,
+    'bad-id': '元件缺少有效的编号',
+    'duplicate-id': `编号 ${p.part} 重复出现`,
+    'bad-number': `元件 ${p.part}：“${d}”的数值无效`,
+    'bad-color': `LED ${p.part}：未知颜色“${d}”`,
+    'bad-hole': `元件 ${p.part}：板上没有 ${d || '?'} 这个孔`,
+    'hole-used-twice': `元件 ${p.part}：孔 ${d} 已被占用`,
+    'pins-share-strip': `元件 ${p.part}：多只脚插在同一个导通条里（会被短接）`,
+    'only-one': `元件 ${p.part}：板上只能有一个`,
+  };
+  return (lang === 'de' ? de : lang === 'zh' ? zh : en)[p.code] ?? `${p.part}: ${p.code}`;
 }
 
 /** Wording of a file-level import failure. */
@@ -265,7 +392,14 @@ export function fileErrorText(reason: string): string {
     'no-parts': 'The wiring file contains no parts.',
     parts: 'Wiring file not loaded:',
   };
-  return (lang === 'de' ? de : en)[reason] ?? reason;
+  const zh: Record<string, string> = {
+    json: '这不是接线文件（不是有效的 JSON）。',
+    format: '这不是本程序的接线文件。',
+    version: '这个接线文件来自更新版本的程序。',
+    'no-parts': '接线文件里没有元件。',
+    parts: '接线文件未载入：',
+  };
+  return (lang === 'de' ? de : lang === 'zh' ? zh : en)[reason] ?? reason;
 }
 
 /** Wording of a program-loading failure (FirmwareError code). */
@@ -288,5 +422,14 @@ export function firmwareErrorText(code: string, detail = ''): string {
     hex: `Error in the HEX file (line ${detail}).`,
     'wrong-device': `Programming refused: the program is built for ${detail}, not for the ATmega1284P (check -mmcu=atmega1284p).`,
   };
-  return (lang === 'de' ? de : en)[code] ?? code;
+  const zh: Record<string, string> = {
+    unrecognised: '无法识别的文件格式：需要 avr-gcc 生成的 .elf 或 .hex 文件。',
+    'elf-format': '不是有效的 ELF 文件（需要 32 位、小端格式）。',
+    'not-avr': '这个 ELF 文件不是为 AVR 编译的，请用 avr-gcc 编译。',
+    'too-large': '程序超出了 ATmega1284P 的 128 KB Flash。',
+    'no-code': '文件里没有程序代码。',
+    hex: `HEX 文件出错（第 ${detail} 行）。`,
+    'wrong-device': `拒绝烧录：程序是为 ${detail} 编译的，不是 ATmega1284P（请检查 -mmcu=atmega1284p）。`,
+  };
+  return (lang === 'de' ? de : lang === 'zh' ? zh : en)[code] ?? code;
 }
