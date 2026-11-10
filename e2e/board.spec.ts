@@ -214,8 +214,8 @@ test('3D view shows the running board and can be rotated', async ({ page }, info
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 200, box.y + box.height / 2 - 60, { steps: 10 });
   await page.mouse.up();
-  await page.waitForTimeout(500);
-  expect(Buffer.compare(before, await canvas.screenshot())).not.toBe(0);
+  // Slow renderers redraw at a reduced rate: wait for the rotated picture instead of a fixed time.
+  await expect.poll(async () => Buffer.compare(before, await canvas.screenshot()), { timeout: 10_000 }).not.toBe(0);
   await page.screenshot({ path: `test-results/3d-rotated-${info.project.name}-${process.platform}.png` });
   const tClick = Date.now();
   await page.click('#toggle-3d');

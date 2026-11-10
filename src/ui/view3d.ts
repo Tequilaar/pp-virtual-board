@@ -18,9 +18,16 @@ const hole3 = (id: string, h = 0) => {
   return new THREE.Vector3(toX(p.x), h, toZ(p.y));
 };
 
-const mat = (color: number, extra: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
-  new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.05, ...extra });
-const METAL = mat(0xb8bcc2, { metalness: 0.6, roughness: 0.35 });
+/**
+ * Lambert shading: far cheaper than physically based materials on CPU renderers (no GPU, Firefox in VMs),
+ * and indistinguishable at this scale. `roughness`/`metalness` are accepted and ignored.
+ */
+type MatOptions = Partial<THREE.MeshLambertMaterialParameters> & { roughness?: number; metalness?: number };
+const mat = (color: number, extra: MatOptions = {}) => {
+  const { roughness: _r, metalness: _m, ...rest } = extra;
+  return new THREE.MeshLambertMaterial({ color, ...rest });
+};
+const METAL = mat(0xc4c8ce);
 
 function box(w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
@@ -53,12 +60,12 @@ function lyingBody(a: string, b: string, h: number, body: THREE.Mesh) {
 }
 
 interface Live {
-  leds: Map<string, THREE.MeshStandardMaterial>;
+  leds: Map<string, THREE.MeshLambertMaterial>;
   servoArms: Map<string, THREE.Object3D>;
   knobs: Map<string, THREE.Object3D>;
   buttons: Map<string, THREE.Object3D>;
   lcds: Map<string, { canvas: HTMLCanvasElement; texture: THREE.CanvasTexture; key: string }>;
-  power: { led2: THREE.MeshStandardMaterial; knob: THREE.Object3D } | null;
+  power: { led2: THREE.MeshLambertMaterial; knob: THREE.Object3D } | null;
 }
 
 export class View3D {
@@ -375,13 +382,16 @@ export class View3D {
     st.renders++;
     st.totalMs += ms;
     st.maxMs = Math.max(st.maxMs, ms);
-    st.avgMs = st.avgMs === 0 ? ms : 0.8 * st.avgMs + 0.2 * ms;
-    if (!st.lowQuality && st.renders >= 3 && st.avgMs > 25) {
+    // The first frames include one-off work (shader compilation, uploads): leave them out of the average.
+    if (st.renders <= 2) return;
+    st.avgMs = st.avgMs === 0 ? ms : 0.7 * st.avgMs + 0.3 * ms;
+    if (!st.lowQuality && st.avgMs > 25) {
       st.lowQuality = true;
       this.renderer.setPixelRatio(1);
       this.resize();
     }
-    st.throttleMs = st.avgMs > 12 ? 4 * st.avgMs : 0;
+    // Keep 3D below ~20 % of the time, but never pause redraws longer than 0.4 s.
+    st.throttleMs = st.avgMs > 12 ? Math.min(400, 4 * st.avgMs) : 0;
   }
 
   get canvas() {
