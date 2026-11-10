@@ -203,7 +203,9 @@ test('3D view shows the running board and can be rotated', async ({ page }, info
   await expect(canvas).toBeVisible({ timeout: 15_000 });
   expect((await canvas.boundingBox())!.width).toBeGreaterThan(400);
   await expect(page.locator('#board-wrap')).toBeHidden();
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(2000);
+  const st = (await sim(page, 'pp.view3d && pp.view3d.stats')) as Record<string, unknown>;
+  console.log(`[3d ${info.project.name} on ${process.platform}] ${JSON.stringify({ ...st, software: await sim(page, 'pp.view3d.software') })}`);
   await page.screenshot({ path: `test-results/3d-${info.project.name}-${process.platform}.png` });
   // Rotate by dragging; the picture must change.
   const before = await canvas.screenshot();
@@ -215,7 +217,9 @@ test('3D view shows the running board and can be rotated', async ({ page }, info
   await page.waitForTimeout(500);
   expect(Buffer.compare(before, await canvas.screenshot())).not.toBe(0);
   await page.screenshot({ path: `test-results/3d-rotated-${info.project.name}-${process.platform}.png` });
+  const tClick = Date.now();
   await page.click('#toggle-3d');
+  console.log(`[3d ${info.project.name} on ${process.platform}] toggle back took ${Date.now() - tClick} ms; after drag ${JSON.stringify(await sim(page, 'pp.view3d.stats'))}`);
   await expect(page.locator('#board-wrap')).toBeVisible();
   expect(errors).toEqual([]);
 });

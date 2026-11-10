@@ -899,4 +899,4 @@ drawParts();
 requestAnimationFrame(frame);
 
 // Exposed for automated UI checks only.
-(window as unknown as { __pp: unknown }).__pp = { get parts() { return parts; }, get sim() { return sim; }, isHole };
+(window as unknown as { __pp: unknown }).__pp = { get parts() { return parts; }, get sim() { return sim; }, get view3d() { return view3d; }, isHole };

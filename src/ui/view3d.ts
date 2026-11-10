@@ -75,9 +75,13 @@ export class View3D {
   private lastSignature = '';
   /** True when WebGL runs in software (no GPU): lower resolution, no anti-aliasing. */
   readonly software: boolean;
+  /** Frame-time statistics; also drive the adaptive quality below. */
+  readonly stats = { renderer: '', renders: 0, totalMs: 0, maxMs: 0, avgMs: 0, lowQuality: false, throttleMs: 0 };
+  private lastRenderAt = 0;
 
   constructor(private container: HTMLElement) {
     this.software = isSoftwareWebGL();
+    this.stats.renderer = rendererName();
     this.renderer = new THREE.WebGLRenderer({ antialias: !this.software, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(this.software ? 1 : Math.min(2, window.devicePixelRatio));
     container.append(this.renderer.domElement);
@@ -336,6 +340,9 @@ export class View3D {
     }
     if (this.controls.enableDamping) this.controls.update();
     if (!this.dirty) return;
+    // Adaptive: a slow renderer (no GPU, old laptop) must not freeze the page. Keep 3D below ~20 % of the time.
+    const now = performance.now();
+    if (now - this.lastRenderAt < this.stats.throttleMs) return;
     this.dirty = false;
     for (const [id, m] of this.live.leds) m.emissiveIntensity = Math.min(1, state.led(id) / 0.01) * 2.5;
     for (const [id, arm] of this.live.servoArms) {
@@ -360,7 +367,21 @@ export class View3D {
       this.live.power.led2.emissiveIntensity = state.powerOut ? 1.5 : 0;
       this.live.power.knob.position.z += 0; // switch position shown via LED2 only
     }
+    const t0 = performance.now();
     this.renderer.render(this.scene, this.camera);
+    const ms = performance.now() - t0;
+    this.lastRenderAt = performance.now();
+    const st = this.stats;
+    st.renders++;
+    st.totalMs += ms;
+    st.maxMs = Math.max(st.maxMs, ms);
+    st.avgMs = st.avgMs === 0 ? ms : 0.8 * st.avgMs + 0.2 * ms;
+    if (!st.lowQuality && st.renders >= 3 && st.avgMs > 25) {
+      st.lowQuality = true;
+      this.renderer.setPixelRatio(1);
+      this.resize();
+    }
+    st.throttleMs = st.avgMs > 12 ? 4 * st.avgMs : 0;
   }
 
   get canvas() {
@@ -372,6 +393,17 @@ export class View3D {
     this.controls.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
+  }
+}
+
+function rendererName(): string {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    if (!gl) return 'none';
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    return String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+  } catch {
+    return 'error';
   }
 }
 
