@@ -81,8 +81,17 @@ const future: Part[][] = [];
 const HISTORY = 200;
 const clone = (ps: Part[]) => JSON.parse(JSON.stringify(ps)) as Part[];
 
+/** True when the wiring changed since the last export or import (reload would lose it). */
+let unsaved = false;
+window.addEventListener('beforeunload', (e) => {
+  if (!unsaved || !parts.length) return;
+  e.preventDefault(); // the browser asks before leaving or reloading
+  e.returnValue = '';
+});
+
 /** Change the wiring as one undoable step. */
 function commit(next: Part[]) {
+  unsaved = true;
   past.push(clone(parts));
   if (past.length > HISTORY) past.shift();
   future.length = 0;
@@ -93,6 +102,7 @@ function commit(next: Part[]) {
 function undo() {
   const prev = past.pop();
   if (!prev) return;
+  unsaved = true;
   future.push(clone(parts));
   selected = null;
   setParts(prev);
@@ -102,6 +112,7 @@ function undo() {
 function redo() {
   const next = future.pop();
   if (!next) return;
+  unsaved = true;
   past.push(clone(parts));
   selected = null;
   setParts(next);
@@ -788,6 +799,7 @@ $('export').addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   a.download = 'verdrahtung.ppboard.json';
+  unsaved = false;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });

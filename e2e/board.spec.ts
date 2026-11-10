@@ -373,3 +373,23 @@ test('rigid parts move as a whole: chip and LCD', async ({ page }) => {
   await dragBy('[data-part="u1"] .chip-body', 3);
   expect(await part('u1')).toMatchObject({ block: 1, col: 19 });
 });
+
+test('leaving with unexported wiring asks first; after export it does not', async ({ page }) => {
+  await page.goto('/');
+  // The page objects to unloading iff it cancels the beforeunload event (the browser then asks the user).
+  const objects = () => page.evaluate(() => {
+    const ev = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(ev);
+    return ev.defaultPrevented;
+  });
+  expect(await objects()).toBe(false); // empty board
+  await page.click('[data-tool="wire"]');
+  await clickHole(page, '2A5');
+  await clickHole(page, '2A9');
+  expect(await objects()).toBe(true); // unexported change
+  await Promise.all([page.waitForEvent('download'), page.click('#export')]);
+  expect(await objects()).toBe(false); // exported
+  await clickHole(page, '2A12');
+  await clickHole(page, '2A15');
+  expect(await objects()).toBe(true); // changed again
+});
