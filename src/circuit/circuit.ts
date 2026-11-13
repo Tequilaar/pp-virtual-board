@@ -134,7 +134,7 @@ export class Circuit {
           use(railHole(p.railPair, '-', 1), p.id);
           break;
         case 'mcu':
-          for (let n = 1; n <= 40; n++) use(dipHole(p.block, p.col, 40, n, p.rotated), p.id);
+          for (let n = 1; n <= 40; n++) use(dipHole(p.block, p.col, 40, n, p.rotated, p.bridge), p.id);
           break;
         default:
           for (const hole of Object.values(partLegs(p))) use(hole, p.id);
@@ -155,7 +155,7 @@ export class Circuit {
     const mcu = parts.find((p) => p.kind === 'mcu');
     if (mcu) {
       DIP40_PINS.forEach((name, i) => {
-        const net = this.netOfHole.get(dipHole(mcu.block, mcu.col, 40, i + 1, mcu.rotated));
+        const net = this.netOfHole.get(dipHole(mcu.block, mcu.col, 40, i + 1, mcu.rotated, mcu.bridge));
         if (net === undefined) return;
         if (name === 'GND') this.gndNets.push(net);
         if (!this.mcuPin.has(name)) this.mcuPin.set(name, net);

@@ -26,6 +26,48 @@ async function clickHole(page: Page, hole: string) {
   await page.mouse.click(c.x, c.y);
 }
 
+// The welcome dialog would cover the board: hide it, except in the test about the dialog itself.
+test.beforeEach(async ({ page }, info) => {
+  if (!info.title.startsWith('welcome')) await page.addInitScript(() => localStorage.setItem('pp-board.intro-hidden', '1'));
+});
+
+test('welcome dialog: shown on start, three languages, can be hidden and reopened', async ({ page }) => {
+  await page.goto('/');
+  const dialog = page.locator('#intro');
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('#intro-title')).toHaveText('Willkommen beim PP Virtual Board');
+  await dialog.getByRole('button', { name: 'English' }).click();
+  await expect(page.locator('#intro-title')).toHaveText('Welcome to the PP Virtual Board');
+  await expect(page.locator('#lang')).toHaveValue('en');
+  await dialog.getByRole('button', { name: '中文' }).click();
+  await expect(page.locator('#intro-title')).toHaveText('欢迎使用 PP 虚拟板');
+  await expect(page.locator('[data-tool="wire"]')).toHaveText('导线');
+  // Shortcuts do nothing while the dialog is open.
+  await page.keyboard.press('r');
+  await page.locator('#intro-hide').check();
+  await page.locator('#intro-start').click();
+  await expect(dialog).toBeHidden();
+  await page.reload();
+  await expect(page.locator('#board-wrap svg')).toBeVisible();
+  await expect(dialog).toBeHidden();
+  await page.locator('#help').click();
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('#intro-hide')).toBeChecked();
+  await page.locator('#intro-hide').uncheck();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await page.reload();
+  await expect(dialog).toBeVisible();
+});
+
+test('chip placed across a rail pair (rows J/A), as on the reference board', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-tool="mcu"]').click();
+  await clickHole(page, '1J15');
+  expect(await sim(page, 'pp.parts.find((p) => p.kind === "mcu")')).toMatchObject({ block: 1, col: 15, bridge: true });
+  await expect(page.locator('[data-pin="PB0"]')).toBeVisible();
+});
+
 test('build, run, press, edit, export', async ({ page, browserName }, info) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

@@ -29,12 +29,20 @@ const DISTINCT_STRIPS = new Set(['encoder', 'servo', 'lcd', 'jtag', 'mcu']);
 export function occupiedHoles(p: Part): string[] {
   switch (p.kind) {
     case 'mcu':
-      return Array.from({ length: 40 }, (_, i) => dipHole(p.block, p.col, 40, i + 1, p.rotated));
+      return Array.from({ length: 40 }, (_, i) => dipHole(p.block, p.col, 40, i + 1, p.rotated, p.bridge));
     case 'power':
       return [`R${p.railPair}+1`, `R${p.railPair}-1`];
     default:
       return Object.values(partLegs(p));
   }
+}
+
+/** Holes a part covers without using them: the rail holes under a chip that spans a rail pair. */
+export function coveredHoles(p: Part): string[] {
+  if (p.kind !== 'mcu' || !p.bridge) return [];
+  const out: string[] = [];
+  for (let c = p.col; c < p.col + 20; c++) out.push(`R${p.block}-${c}`, `R${p.block}+${c}`);
+  return out;
 }
 
 const positive = (x: unknown) => typeof x === 'number' && Number.isFinite(x) && x > 0;
@@ -90,7 +98,7 @@ export function validateParts(parts: unknown[]): Problem[] {
       problems.push({ code: 'bad-hole', part: id, detail: bad.length ? String(bad[0]) : '' });
       continue;
     }
-    for (const h of legs) {
+    for (const h of [...legs, ...coveredHoles(p)]) {
       const owner = holes.get(h);
       if (owner) problems.push({ code: 'hole-used-twice', part: id, detail: `${h} (${owner})` });
       else holes.set(h, id);

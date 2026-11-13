@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { BLOCKS, COLUMNS, RAIL_PAIRS, dipHole } from '../circuit/breadboard';
+import { BLOCKS, COLUMNS, RAIL_PAIRS, dipHole, dipRows } from '../circuit/breadboard';
 import type { Part } from '../circuit/parts';
 import { HEIGHT, P, WIDTH, allHoles, blockBounds, colX, holePos, railBounds, railY, rowY } from './layout';
 import { type LcdViewData, lcdKey, paintLcdCanvas } from './render';
@@ -223,13 +223,14 @@ export class View3D {
         break;
       }
       case 'mcu': {
-        const first = holePos(dipHole(p.block, p.col, 40, 1, p.rotated))!;
+        const first = holePos(dipHole(p.block, p.col, 40, 1, p.rotated, p.bridge))!;
         const x0 = colX(p.col);
         const x1 = colX(p.col + 19);
-        const zE = rowY(p.block, 'E');
-        const zF = rowY(p.block, 'F');
+        const [[tb, tr], [bb, br]] = dipRows(p.block, p.bridge);
+        const zE = rowY(tb, tr);
+        const zF = rowY(bb, br);
         g.add(box((x1 - x0 + P * 1.1) * S, 1.0, (zF - zE + P * 0.3) * S, mat(0x2a2a2c, { roughness: 0.5 }), toX((x0 + x1) / 2), 1.0, toZ((zE + zF) / 2)));
-        for (let n = 1; n <= 40; n++) g.add(leg(dipHole(p.block, p.col, 40, n, p.rotated), 0.8));
+        for (let n = 1; n <= 40; n++) g.add(leg(dipHole(p.block, p.col, 40, n, p.rotated, p.bridge), 0.8));
         const notch = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 12), mat(0x4a4a4d));
         notch.position.set(toX(p.rotated ? x1 + P * 0.4 : x0 - P * 0.4), 1.52, toZ((zE + zF) / 2));
         g.add(notch);

@@ -8,7 +8,7 @@ import { createBoard, drawPart, setEncoderDetents, setLcdView, setLedLevel, setS
 import { fontA00 } from '../lcd/font-a00';
 import { type Key, fileErrorText, firmwareErrorText, getLang, jtagProblem, problemText, setLang, t, warningText } from './i18n';
 import { WiringFileError, exportWiring, importWiring } from './wiring-file';
-import { validateParts } from '../circuit/validate';
+import { validateParts, coveredHoles } from '../circuit/validate';
 
 type Tool = 'select' | 'wire' | 'resistor' | 'led' | 'button' | 'capacitor' | 'crystal' | 'mcu' | 'power' | 'encoder' | 'servo' | 'lcd' | 'jtag' | 'meter';
 const TWO_LEG: Tool[] = ['wire', 'resistor', 'led', 'button', 'capacitor', 'crystal'];
@@ -42,7 +42,7 @@ for (const h of allHoles()) {
 function partHoles(p: Part): string[] {
   switch (p.kind) {
     case 'mcu':
-      return Array.from({ length: 40 }, (_, i) => dipHole(p.block, p.col, 40, i + 1, p.rotated));
+      return Array.from({ length: 40 }, (_, i) => dipHole(p.block, p.col, 40, i + 1, p.rotated, p.bridge));
     case 'power':
       return [`R${p.railPair}+1`, `R${p.railPair}-1`];
     default:
@@ -52,14 +52,14 @@ function partHoles(p: Part): string[] {
 
 function occupied(): Map<string, string> {
   const m = new Map<string, string>();
-  for (const p of parts) for (const h of partHoles(p)) m.set(h, p.id);
+  for (const p of parts) for (const h of [...partHoles(p), ...coveredHoles(p)]) m.set(h, p.id);
   return m;
 }
 
 function mcuPinAt(hole: string): string | null {
   const mcu = parts.find((p) => p.kind === 'mcu');
   if (!mcu) return null;
-  for (let n = 1; n <= 40; n++) if (dipHole(mcu.block, mcu.col, 40, n, mcu.rotated) === hole) return `${DIP40_PINS[n - 1]} (${t('pin')} ${n})`;
+  for (let n = 1; n <= 40; n++) if (dipHole(mcu.block, mcu.col, 40, n, mcu.rotated, mcu.bridge) === hole) return `${DIP40_PINS[n - 1]} (${t('pin')} ${n})`;
   return null;
 }
 
@@ -365,12 +365,22 @@ function rotateChip() {
 
 function placeMcu(hole: string) {
   if (parts.some((p) => p.kind === 'mcu')) return say(t('onlyOne'));
-  // The clicked column is the chip's left end; rows E or F (the chip straddles the gap either way).
-  const m = /^([1-4])[EF](\d+)$/.exec(hole);
-  const col = m ? Number(m[2]) : 0;
+  // The clicked column is the chip's left end. Rows E/F: across the centre gap; rows J/A: across the rail pair
+  // between two blocks (as on the reference board).
+  const m = /^([1-4])([EFJA])(\d+)$/.exec(hole);
+  const col = m ? Number(m[3]) : 0;
+  const bridge = m?.[2] === 'J' || m?.[2] === 'A';
+  const block = Number(m?.[1] ?? 1) - (m?.[2] === 'A' ? 1 : 0);
   const occ = occupied();
-  const candidate: Part = { kind: 'mcu', id: 'U1', block: Number(m?.[1] ?? 1), col, ...(placeRotated ? { rotated: true } : {}) };
-  if (!m || col > 41 || partHoles(candidate).some((h) => occ.has(h))) return say(t('mcuPlace'));
+  const candidate: Part = {
+    kind: 'mcu',
+    id: 'U1',
+    block,
+    col,
+    ...(placeRotated ? { rotated: true } : {}),
+    ...(bridge ? { bridge: true } : {}),
+  };
+  if (!m || col > 41 || block < 1 || block > 3 && bridge || partHoles(candidate).some((h) => occ.has(h))) return say(t('mcuPlace'));
   addPart(candidate);
 }
 
@@ -477,12 +487,18 @@ function movedPart(p: Part, ref: string, target: string, leg: string | null): Pa
   switch (p.kind) {
     case 'power':
       return null;
-    case 'mcu':
-    case 'jtag': {
-      // Must keep straddling a gap: the reference row (F for the chip, E for the header) has to stay that row.
+    case 'mcu': {
+      // The handle is the bottom pin row: row F keeps the chip across a centre gap, row A across a rail pair.
       const m = /^([1-4])([A-J])(\d+)$/.exec(target);
-      const want = p.kind === 'mcu' ? 'F' : 'E';
-      if (!m || m[2] !== want) return null;
+      if (!m) return null;
+      if (m[2] === 'F') return { ...p, block: Number(m[1]), col: Number(m[3]), bridge: undefined };
+      if (m[2] === 'A' && Number(m[1]) > 1) return { ...p, block: Number(m[1]) - 1, col: Number(m[3]), bridge: true };
+      return null;
+    }
+    case 'jtag': {
+      // Must keep straddling the gap: the reference row E has to stay row E.
+      const m = /^([1-4])([A-J])(\d+)$/.exec(target);
+      if (!m || m[2] !== 'E') return null;
       return { ...p, block: Number(m[1]), col: Number(m[3]) };
     }
     case 'lcd': {
@@ -504,7 +520,7 @@ function movedPart(p: Part, ref: string, target: string, leg: string | null): Pa
 
 /** Hole used as the handle when a whole part is dragged. */
 function referenceHole(p: Part): string {
-  if (p.kind === 'mcu') return `${p.block}F${p.col}`;
+  if (p.kind === 'mcu') return p.bridge ? `${p.block + 1}A${p.col}` : `${p.block}F${p.col}`;
   if (p.kind === 'jtag') return `${p.block}E${p.col}`;
   if (p.kind === 'lcd') return `${p.block}${p.row}${p.col}`;
   return Object.values(partLegs(p))[0] ?? '';
@@ -693,6 +709,7 @@ board.root.addEventListener('pointermove', (e) => {
 
 window.addEventListener('keydown', (e) => {
   if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT') return;
+  if (($('intro') as HTMLDialogElement).open) return;
   const mod = e.ctrlKey || e.metaKey;
   const key = e.key.toLowerCase();
   if (mod && key === 'z' && !e.shiftKey) {
@@ -823,6 +840,55 @@ $('lang').addEventListener('change', (e) => {
   applyTexts();
   renderStatus(realtime);
 });
+
+// ------------------------------------------------------------------ welcome dialog
+
+const INTRO_KEY = 'pp-board.intro-hidden';
+const intro = $('intro') as HTMLDialogElement;
+function chooseLang(l: 'de' | 'en' | 'zh') {
+  const sel = $('lang') as HTMLSelectElement;
+  sel.value = l;
+  sel.dispatchEvent(new Event('change'));
+}
+function markIntroLang() {
+  for (const b of intro.querySelectorAll<HTMLButtonElement>('[data-lang]')) b.setAttribute('aria-pressed', String(b.dataset.lang === getLang()));
+}
+for (const b of intro.querySelectorAll<HTMLButtonElement>('[data-lang]')) {
+  b.addEventListener('click', () => {
+    chooseLang(b.dataset.lang as 'de' | 'en' | 'zh');
+    markIntroLang();
+  });
+}
+function openIntro() {
+  let hidden = false;
+  try {
+    hidden = localStorage.getItem(INTRO_KEY) === '1';
+  } catch {
+    /* storage blocked: show it every time */
+  }
+  ($('intro-hide') as HTMLInputElement).checked = hidden;
+  markIntroLang();
+  if (!intro.open) intro.showModal();
+}
+// Saved at once (not on close), so a reload right after ticking keeps the choice.
+$('intro-hide').addEventListener('change', () => {
+  try {
+    if (($('intro-hide') as HTMLInputElement).checked) localStorage.setItem(INTRO_KEY, '1');
+    else localStorage.removeItem(INTRO_KEY);
+  } catch {
+    /* storage blocked */
+  }
+});
+$('help').addEventListener('click', openIntro);
+{
+  let hidden = false;
+  try {
+    hidden = localStorage.getItem(INTRO_KEY) === '1';
+  } catch {
+    /* storage blocked */
+  }
+  if (!hidden) openIntro();
+}
 
 function applyTexts() {
   document.documentElement.lang = getLang();

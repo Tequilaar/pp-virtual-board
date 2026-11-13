@@ -39,13 +39,21 @@ export function stripOf(hole: string): string | null {
 
 export const isHole = (hole: string) => stripOf(hole) !== null;
 
-/** Hole of DIP pin `n` (1-based) for a chip straddling the centre gap of `block`, pin 1 at `col`. */
-export function dipHole(block: number, col: number, pins: number, n: number, rotated = false): string {
+/**
+ * Hole of DIP pin `n` (1-based), pin 1 at `col`.
+ * Normally the chip straddles the centre gap of `block` (rows E/F). With `bridge` it spans the rail pair
+ * between `block` and `block + 1` instead (rows J/A), as on the reference board.
+ */
+export function dipHole(block: number, col: number, pins: number, n: number, rotated = false, bridge = false): string {
   const half = pins / 2;
-  // Unrotated: notch left, pins 1..half along row F left→right, pins half+1..pins along row E right→left.
-  if (!rotated) {
-    return n <= half ? terminalHole(block, 'F', col + n - 1) : terminalHole(block, 'E', col + pins - n);
-  }
-  // Rotated 180°: pin 1 top-right, pins 1..half along row E right→left.
-  return n <= half ? terminalHole(block, 'E', col + half - n) : terminalHole(block, 'F', col + n - half - 1);
+  const top = (c: number) => (bridge ? terminalHole(block, 'J', c) : terminalHole(block, 'E', c));
+  const bottom = (c: number) => (bridge ? terminalHole(block + 1, 'A', c) : terminalHole(block, 'F', c));
+  // Unrotated: notch left, pins 1..half along the bottom row left→right, pins half+1..pins along the top row right→left.
+  if (!rotated) return n <= half ? bottom(col + n - 1) : top(col + pins - n);
+  // Rotated 180°: pin 1 top-right, pins 1..half along the top row right→left.
+  return n <= half ? top(col + half - n) : bottom(col + n - half - 1);
 }
+
+/** The two rows a chip's pins sit in: [top, bottom] as (block, row). */
+export const dipRows = (block: number, bridge = false): [[number, Row], [number, Row]] =>
+  bridge ? [[block, 'J'], [block + 1, 'A']] : [[block, 'E'], [block, 'F']];

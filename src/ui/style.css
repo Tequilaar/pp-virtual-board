@@ -109,3 +109,18 @@ main.mode-3d .tools button[data-tool] { opacity: .45; pointer-events: none; }
 #meter-status b { font-size: 16px; }
 .probe-red { fill: #e5484d; stroke: #7a1515; } .probe-black { fill: #222; stroke: #000; }
 .probe-line { stroke: #888; stroke-dasharray: 3 3; }
+
+/* welcome dialog */
+#intro { max-width: 640px; width: calc(100% - 32px); border: 1px solid var(--line); border-radius: 12px; padding: 22px 26px; background: var(--panel); color: var(--ink); box-shadow: 0 18px 50px rgba(0, 0, 0, .25); }
+#intro::backdrop { background: rgba(20, 20, 24, .45); }
+.intro-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+#intro h1 { font-size: 19px; margin: 2px 0 6px; }
+.intro-lang { display: flex; gap: 4px; }
+.intro-lang button { padding: 3px 9px; font-size: 12px; }
+.intro-lang button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+#intro p, #intro li { font-size: 14px; line-height: 1.5; }
+#intro ol { padding-left: 20px; margin: 10px 0; }
+#intro li { margin-bottom: 7px; }
+.intro-note { color: var(--muted); font-size: 13px !important; }
+.intro-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+button.primary { background: var(--accent); border-color: var(--accent); color: white; padding: 7px 18px; font-weight: 600; }

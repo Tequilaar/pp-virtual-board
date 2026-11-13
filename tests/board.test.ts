@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { loadFirmware } from '../src/chip/firmware';
 import type { Part } from '../src/circuit/parts';
 import { BoardSim } from '../src/sim/board-sim';
+import { dipHole } from '../src/circuit/breadboard';
+import { validateParts } from '../src/circuit/validate';
 import { basicSetup, jtagCircuit, lcdCircuit, without } from './fixtures';
 import { fwPath } from './helpers';
 
@@ -207,5 +209,48 @@ describe('floating-input notes', () => {
     const b = mk(parts, fw('pc3_led')); // drives only PC3; PB*, PD0, PD5 stay inputs
     b.run(50 * MS);
     expect([...b.warnings.keys()].filter((k) => k.startsWith('floating:'))).toEqual([]);
+  });
+});
+
+describe('chip across a rail pair (bridge)', () => {
+  it('pins sit in row J of the block and row A of the next one', () => {
+    expect(dipHole(1, 15, 40, 1, false, true)).toBe('2A15');
+    expect(dipHole(1, 15, 40, 20, false, true)).toBe('2A34');
+    expect(dipHole(1, 15, 40, 21, false, true)).toBe('1J34');
+    expect(dipHole(1, 15, 40, 40, false, true)).toBe('1J15');
+    expect(dipHole(1, 15, 40, 1, true, true)).toBe('1J34');
+    expect(dipHole(1, 15, 40, 21, true, true)).toBe('2A15');
+  });
+  it('the rail holes under the chip are covered', () => {
+    const chip: Part = { kind: 'mcu', id: 'U1', block: 1, col: 15, bridge: true };
+    expect(validateParts([chip, { kind: 'wire', id: 'w', a: 'R1+20', b: 'R2+20' }]).map((p) => p.code)).toEqual(['hole-used-twice']);
+    expect(validateParts([chip, { kind: 'wire', id: 'w', a: 'R1+35', b: 'R2+35' }])).toEqual([]);
+  });
+  it('not below the last block', () => {
+    expect(validateParts([{ kind: 'mcu', id: 'U1', block: 4, col: 10, bridge: true }]).map((p) => p.code)).toEqual(['bad-hole']);
+  });
+  it('a bridged chip runs and lights the LED on PD0', () => {
+    // bottom row in block 2: RST 23, VCC 24, GND 25, XTAL2 26, XTAL1 27, PD0 28; top row in block 1: GND 24, AVCC 25
+    const parts: Part[] = [
+      { kind: 'power', id: 'power', railPair: 0 },
+      { kind: 'wire', id: 'w+', a: 'R0+3', b: 'R2+3' },
+      { kind: 'wire', id: 'w-', a: 'R0-4', b: 'R2-4' },
+      { kind: 'mcu', id: 'u1', block: 1, col: 15, bridge: true },
+      { kind: 'wire', id: 'gnd31', a: '1F24', b: 'R0-24' },
+      { kind: 'wire', id: 'avcc', a: '1F25', b: 'R0+25' },
+      { kind: 'wire', id: 'vcc', a: '2E24', b: 'R2+24' },
+      { kind: 'wire', id: 'gnd11', a: '2E25', b: 'R2-25' },
+      { kind: 'crystal', id: 'q1', a: '2C26', b: '2C27', hz: 20_000_000 },
+      { kind: 'capacitor', id: 'c1', a: '2D26', b: 'R2-26', farads: 33e-12 },
+      { kind: 'capacitor', id: 'c2', a: '2D27', b: 'R2-27', farads: 33e-12 },
+      { kind: 'resistor', id: 'r1', a: '2E28', b: '2F28', ohms: 330 },
+      { kind: 'led', id: 'led1', anode: '2H28', cathode: '2H30', color: 'green' },
+      { kind: 'wire', id: 'ledgnd', a: '2J30', b: 'R2-30' },
+    ] as Part[];
+    expect(validateParts(parts)).toEqual([]);
+    const b = mk(parts, fw('led_pd0'));
+    b.run(MS);
+    expect(b.status.running).toBe(true);
+    expect(mA(b.ledCurrent('led1'))).toBeGreaterThan(6.5);
   });
 });

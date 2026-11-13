@@ -1,5 +1,5 @@
 /** SVG drawing of the board and its parts. Pure DOM construction, no simulation logic. */
-import { BLOCKS, COLUMNS, RAIL_PAIRS, ROWS, dipHole } from '../circuit/breadboard';
+import { BLOCKS, COLUMNS, RAIL_PAIRS, ROWS, dipHole, dipRows } from '../circuit/breadboard';
 import { DIP40_PINS, type Part } from '../circuit/parts';
 import { HEIGHT, LEFT, P, WIDTH, allHoles, blockBounds, colX, holePos, railBounds, railY, rowY } from './layout';
 
@@ -155,16 +155,17 @@ export function drawPart(p: Part): SVGGElement {
       break;
     }
     case 'mcu': {
-      const first = holePos(dipHole(p.block, p.col, 40, 1, p.rotated))!;
+      const first = holePos(dipHole(p.block, p.col, 40, 1, p.rotated, p.bridge))!;
       const x0 = colX(p.col) - P * 0.55;
       const x1 = colX(p.col + 19) + P * 0.55;
-      const yTop = rowY(p.block, 'E') - P * 0.15;
-      const yBot = rowY(p.block, 'F') + P * 0.15;
+      const [[tb, tr], [bb, br]] = dipRows(p.block, p.bridge);
+      const yTop = rowY(tb, tr) - P * 0.15;
+      const yBot = rowY(bb, br) + P * 0.15;
       g.append(svg('rect', { x: x0, y: yTop, width: x1 - x0, height: yBot - yTop, rx: 2, class: 'chip-body' }));
       const notchX = p.rotated ? x1 : x0;
       g.append(svg('path', { d: `M${notchX} ${(yTop + yBot) / 2 - 5} a5 5 0 0 ${p.rotated ? 0 : 1} 0 10`, class: 'chip-notch' }));
       DIP40_PINS.forEach((name, i) => {
-        const h = holePos(dipHole(p.block, p.col, 40, i + 1, p.rotated))!;
+        const h = holePos(dipHole(p.block, p.col, 40, i + 1, p.rotated, p.bridge))!;
         const inner = h.y < (yTop + yBot) / 2 ? h.y + 9 : h.y - 5;
         g.append(
           svg('rect', { x: h.x - 3, y: h.y - 3, width: 6, height: 6, class: 'chip-pin' }),

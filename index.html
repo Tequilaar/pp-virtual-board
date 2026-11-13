@@ -23,6 +23,7 @@
       <button id="clear" data-t="clear"></button>
       <span class="sep"></span>
       <button id="zoom-out" aria-label="zoom out">−</button><span id="zoom-level">130 %</span><button id="zoom-in" aria-label="zoom in">+</button>
+      <button id="help" data-t="help"></button>
       <select id="lang" aria-label="Sprache / language"><option value="de">Deutsch</option><option value="en">English</option><option value="zh">中文</option></select>
     </div>
   </header>
@@ -73,6 +74,27 @@
     </aside>
   </main>
   <footer><span id="hint"></span><span id="hover"></span></footer>
+  <dialog id="intro" aria-labelledby="intro-title">
+    <div class="intro-head">
+      <h1 id="intro-title" data-t="introTitle"></h1>
+      <div class="intro-lang" role="group" aria-label="Sprache / language / 语言">
+        <button data-lang="de">Deutsch</button><button data-lang="en">English</button><button data-lang="zh">中文</button>
+      </div>
+    </div>
+    <p data-t="introLead"></p>
+    <ol>
+      <li data-t="introStep1"></li>
+      <li data-t="introStep2"></li>
+      <li data-t="introStep3"></li>
+      <li data-t="introStep4"></li>
+      <li data-t="introStep5"></li>
+    </ol>
+    <p class="intro-note" data-t="introNote"></p>
+    <form method="dialog" class="intro-foot">
+      <label class="check"><input id="intro-hide" type="checkbox" /> <span data-t="introHide"></span></label>
+      <button id="intro-start" class="primary" data-t="introStart" autofocus></button>
+    </form>
+  </dialog>
   <script type="module" src="/src/ui/main.ts"></script>
 </body>
 </html>

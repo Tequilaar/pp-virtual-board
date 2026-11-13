@@ -31,7 +31,8 @@ export type Part =
   /** USB power board: plugs onto the top rail pair (R0) with switch S and fuse F. */
   | { kind: 'power'; id: string; railPair: number }
   /** ATmega1284P in DIP-40, straddling the gap of `block` with pin 1 at column `col`. */
-  | { kind: 'mcu'; id: string; block: number; col: number; rotated?: boolean };
+  /** `bridge`: the chip spans the rail pair below `block` (rows J of `block` / A of `block + 1`) instead of the centre gap. */
+  | { kind: 'mcu'; id: string; block: number; col: number; rotated?: boolean; bridge?: boolean };
 
 /** Pin names of the ATmega1284P in the 40-pin PDIP package (datasheet pin table). */
 export const DIP40_PINS: readonly string[] = [
