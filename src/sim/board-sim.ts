@@ -544,7 +544,7 @@ export class BoardSim {
     const header = this.circuit.parts.find((p) => p.kind === 'jtag');
     if (!header) return null;
     const legs = partLegs(header);
-    const net = (pin: number) => this.circuit.net(legs[`p${pin}`]);
+    const net = (pin: number) => (legs[`p${pin}`] ? this.circuit.net(legs[`p${pin}`]) : undefined);
     const problems: string[] = [];
     if (!this.status.powered) problems.push('power');
     const wanted: [string, number, string][] = [
@@ -559,7 +559,8 @@ export class BoardSim {
       const target = this.circuit.mcuPin.get(mcuPin);
       if (target === undefined || net(pin) !== target) problems.push(`${sig}-${mcuPin}`);
     }
-    for (const pin of [1, 9]) if (net(pin) !== this.circuit.ground) problems.push(`GND${pin}`);
+    // The 8-pin plug has a single GND contact (pin 1); the header has two.
+    for (const pin of [1, 9]) if (legs[`p${pin}`] && net(pin) !== this.circuit.ground) problems.push(`GND${pin}`);
 
     return problems;
   }

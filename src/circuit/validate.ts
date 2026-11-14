@@ -2,8 +2,8 @@
  * Checks that a list of parts describes something that could exist on the real board. Used when importing a
  * wiring file and when placing parts in the UI. Returns problems as codes + values so the UI can word them.
  */
-import { dipHole, isHole, stripOf } from './breadboard';
-import { type Part, partLegs } from './parts';
+import { ROWS, dipHole, isHole, stripOf } from './breadboard';
+import { JTAG_PLUG_GAPS, LARGE_POWER_COLS, type Part, partLegs } from './parts';
 
 export interface Problem {
   code:
@@ -31,17 +31,27 @@ export function occupiedHoles(p: Part): string[] {
     case 'mcu':
       return Array.from({ length: 40 }, (_, i) => dipHole(p.block, p.col, 40, i + 1, p.rotated, p.bridge));
     case 'power':
-      return [`R${p.railPair}+1`, `R${p.railPair}-1`];
+      return p.large ? [`R${p.railPair}+1`, `R${p.railPair}-1`, `R${p.railPair + 1}+1`, `R${p.railPair + 1}-1`] : [`R${p.railPair}+1`, `R${p.railPair}-1`];
     default:
       return Object.values(partLegs(p));
   }
 }
 
-/** Holes a part covers without using them: the rail holes under a chip that spans a rail pair. */
+/**
+ * Holes a part covers without using them: the rail holes under a chip that spans a rail pair, the plug positions
+ * without a contact, and everything under the large power board.
+ */
 export function coveredHoles(p: Part): string[] {
-  if (p.kind !== 'mcu' || !p.bridge) return [];
   const out: string[] = [];
-  for (let c = p.col; c < p.col + 20; c++) out.push(`R${p.block}-${c}`, `R${p.block}+${c}`);
+  if (p.kind === 'mcu' && p.bridge) for (let c = p.col; c < p.col + 20; c++) out.push(`R${p.block}-${c}`, `R${p.block}+${c}`);
+  if (p.kind === 'jtag' && p.row) for (const i of JTAG_PLUG_GAPS) out.push(`${p.block}${p.row}${p.col + i}`);
+  if (p.kind === 'power' && p.large) {
+    for (let c = 1; c <= LARGE_POWER_COLS; c++) {
+      // Rail pair 1 stays usable under the board's lower edge (the rail jumpers start there on the lab board).
+      for (const s of ['+', '-']) if (c > 1) out.push(`R${p.railPair}${s}${c}`);
+      for (const r of ROWS) out.push(`${p.railPair + 1}${r}${c}`);
+    }
+  }
   return out;
 }
 
@@ -79,6 +89,8 @@ export function validateParts(parts: unknown[]): Problem[] {
       num('block', int);
       num('col', int);
     }
+    if (p.kind === 'jtag' && p.row !== undefined && (typeof p.row !== 'string' || !/^[A-J]$/.test(p.row))) problems.push({ code: 'bad-hole', part: id, detail: String(p.row) });
+    if (p.kind === 'power' && p.large !== undefined && typeof p.large !== 'boolean') problems.push({ code: 'bad-number', part: id, detail: 'large' });
     if (p.kind === 'power') num('railPair', (x) => int(x) && (x as number) === 0);
     if (p.kind === 'mcu' || p.kind === 'power' || p.kind === 'jtag') {
       const other = singletons.get(p.kind);

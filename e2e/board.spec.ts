@@ -68,6 +68,28 @@ test('chip placed across a rail pair (rows J/A), as on the reference board', asy
   await expect(page.locator('[data-pin="PB0"]')).toBeVisible();
 });
 
+test('lab power board and the 8-pin programming plug, as on the reference board', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-tool="power"]').click();
+  await expect(page.locator('#power-style')).toHaveValue('large');
+  await clickHole(page, '3C30');
+  expect(await sim(page, 'pp.parts.find((p) => p.kind === "power")')).toMatchObject({ railPair: 0, large: true });
+  await page.locator('[data-tool="mcu"]').click();
+  await clickHole(page, '1J15');
+  await page.locator('[data-tool="jtag"]').click();
+  await expect(page.locator('#jtag-style')).toHaveValue('plug');
+  await clickHole(page, '1H24');
+  // The RST lead starts in a free hole of the RESET strip (chip pin 9 at 2A23).
+  expect(await sim(page, 'pp.parts.find((p) => p.kind === "jtag")')).toMatchObject({ block: 1, row: 'H', col: 24, rst: '2B23' });
+  expect(await sim(page, 'pp.sim.jtagCheck()')).toEqual(expect.not.arrayContaining(['TCK-PC2', 'TMS-PC3', 'TDO-PC4', 'TDI-PC5', 'RST-RESET']));
+  // Covered holes: under the power board and the plug's two middle positions.
+  await page.locator('[data-tool="wire"]').click();
+  await clickHole(page, '1C5');
+  await expect(page.locator('#hint')).toContainText('belegt');
+  await clickHole(page, '1H26');
+  await expect(page.locator('#hint')).toContainText('belegt');
+});
+
 test('build, run, press, edit, export', async ({ page, browserName }, info) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -273,7 +295,7 @@ test('multimeter and JTAG-only programming', async ({ page }) => {
   // JTAG required but no header: loading is refused like a failed avrdude run.
   await page.check('#jtag-required');
   await page.setInputFiles('#program-file', join(FW, 'led_pd0.elf'));
-  await expect(page.locator('#hint')).toContainText('keine JTAG-Stiftleiste');
+  await expect(page.locator('#hint')).toContainText('kein JTAG-Anschluss');
   expect(await sim(page, 'pp.sim.status.programLoaded')).toBe(false);
   await page.uncheck('#jtag-required');
   await page.setInputFiles('#program-file', join(FW, 'led_pd0.elf'));

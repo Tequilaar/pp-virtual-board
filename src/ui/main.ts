@@ -8,7 +8,7 @@ import { createBoard, drawPart, setEncoderDetents, setLcdView, setLedLevel, setS
 import { fontA00 } from '../lcd/font-a00';
 import { type Key, fileErrorText, firmwareErrorText, getLang, jtagProblem, problemText, setLang, t, warningText } from './i18n';
 import { WiringFileError, exportWiring, importWiring } from './wiring-file';
-import { validateParts, coveredHoles } from '../circuit/validate';
+import { validateParts, coveredHoles, occupiedHoles } from '../circuit/validate';
 
 type Tool = 'select' | 'wire' | 'resistor' | 'led' | 'button' | 'capacitor' | 'crystal' | 'mcu' | 'power' | 'encoder' | 'servo' | 'lcd' | 'jtag' | 'meter';
 const TWO_LEG: Tool[] = ['wire', 'resistor', 'led', 'button', 'capacitor', 'crystal'];
@@ -39,16 +39,7 @@ for (const h of allHoles()) {
 }
 
 // ------------------------------------------------------------------ helpers
-function partHoles(p: Part): string[] {
-  switch (p.kind) {
-    case 'mcu':
-      return Array.from({ length: 40 }, (_, i) => dipHole(p.block, p.col, 40, i + 1, p.rotated, p.bridge));
-    case 'power':
-      return [`R${p.railPair}+1`, `R${p.railPair}-1`];
-    default:
-      return Object.values(partLegs(p));
-  }
-}
+const partHoles = occupiedHoles;
 
 function occupied(): Map<string, string> {
   const m = new Map<string, string>();
@@ -431,6 +422,7 @@ function placeLcd(hole: string) {
 
 function placeJtag(hole: string) {
   if (parts.some((p) => p.kind === 'jtag')) return say(t('onlyOne'));
+  if (($('jtag-style') as HTMLSelectElement).value === 'plug') return placeJtagPlug(hole);
   const m = /^([1-4])E(\d+)$/.exec(hole);
   const col = m ? Number(m[2]) : 0;
   const candidate: Part = { kind: 'jtag', id: 'JTAG', block: Number(m?.[1] ?? 1), col };
@@ -439,10 +431,32 @@ function placeJtag(hole: string) {
   addPart(candidate);
 }
 
+/** The adapter's 8-pin plug: clicked hole = position 1 (GND). The RST lead starts in a free hole of the chip's RESET strip. */
+function placeJtagPlug(hole: string) {
+  const m = /^([1-4])([A-J])(\d+)$/.exec(hole);
+  const col = m ? Number(m[3]) : 0;
+  if (!m || col + 7 > 60) return say(t('jtagPlugPlace'));
+  const occ = occupied();
+  const plug: Part = { kind: 'jtag', id: 'JTAG', block: Number(m[1]), row: m[2], col };
+  const body = [...Object.values(partLegs(plug)).filter(Boolean), ...coveredHoles(plug)];
+  if (body.some((h) => occ.has(h))) return say(t('jtagPlugPlace'));
+  const taken = new Set([...occ.keys(), ...body]);
+  const mcu = parts.find((p) => p.kind === 'mcu');
+  const resetHole = mcu ? dipHole(mcu.block, mcu.col, 40, 9, mcu.rotated, mcu.bridge) : null;
+  const strip = resetHole ? stripHoles.get(stripOf(resetHole)!) ?? [] : [];
+  const fallback = [`${m[1]}${m[2]}${col - 2}`, `${m[1]}${m[2]}${col + 9}`].filter((h) => isHole(h));
+  const rst = [...strip, ...fallback].find((h) => !taken.has(h));
+  if (!rst) return say(t('jtagPlugPlace'));
+  addPart({ ...plug, rst });
+}
+
 function placePower() {
   if (parts.some((p) => p.kind === 'power')) return say(t('onlyOne'));
-  if (occupied().has('R0+1') || occupied().has('R0-1')) return say(t('occupied'));
-  addPart({ kind: 'power', id: 'PWR', railPair: 0 });
+  const large = ($('power-style') as HTMLSelectElement).value === 'large';
+  const candidate: Part = { kind: 'power', id: 'PWR', railPair: 0, ...(large ? { large: true } : {}) };
+  const occ = occupied();
+  if ([...occupiedHoles(candidate), ...coveredHoles(candidate)].some((h) => occ.has(h))) return say(t(large ? 'powerLargePlace' : 'occupied'));
+  addPart(candidate);
 }
 
 // ------------------------------------------------------------------ moving parts
@@ -496,6 +510,13 @@ function movedPart(p: Part, ref: string, target: string, leg: string | null): Pa
       return null;
     }
     case 'jtag': {
+      if (p.row) {
+        // The plug moves by whole rows/columns; its RST lead moves along.
+        const m = /^([1-4])([A-J])(\d+)$/.exec(target);
+        const rst = p.rst ? shiftHole(p.rst, dLine, dCol) : null;
+        if (!m || !rst) return null;
+        return { ...p, block: Number(m[1]), row: m[2], col: Number(m[3]), rst };
+      }
       // Must keep straddling the gap: the reference row E has to stay row E.
       const m = /^([1-4])([A-J])(\d+)$/.exec(target);
       if (!m || m[2] !== 'E') return null;
@@ -521,7 +542,7 @@ function movedPart(p: Part, ref: string, target: string, leg: string | null): Pa
 /** Hole used as the handle when a whole part is dragged. */
 function referenceHole(p: Part): string {
   if (p.kind === 'mcu') return p.bridge ? `${p.block + 1}A${p.col}` : `${p.block}F${p.col}`;
-  if (p.kind === 'jtag') return `${p.block}E${p.col}`;
+  if (p.kind === 'jtag') return `${p.block}${p.row ?? 'E'}${p.col}`;
   if (p.kind === 'lcd') return `${p.block}${p.row}${p.col}`;
   return Object.values(partLegs(p))[0] ?? '';
 }
@@ -581,7 +602,11 @@ board.root.addEventListener('pointerdown', (e) => {
     const p = parts.find((x) => x.id === id);
     const pt = svgPoint(e);
     let leg: string | null = null;
-    if (p && TWO_LEG_KINDS.has(p.kind)) {
+    if (p?.kind === 'jtag' && p.row && p.rst) {
+      // Only the plug's RST lead can be re-plugged on its own.
+      const q = holePos(p.rst)!;
+      if (Math.hypot(q.x - pt.x, q.y - pt.y) < 7) leg = 'rst';
+    } else if (p && TWO_LEG_KINDS.has(p.kind)) {
       for (const [k, h] of Object.entries(partLegs(p))) {
         const q = holePos(h)!;
         if (Math.hypot(q.x - pt.x, q.y - pt.y) < 7) leg = k;
@@ -681,7 +706,7 @@ board.root.addEventListener('pointermove', (e) => {
       const p = parts.find((x) => x.id === drag!.id);
       board.overlay.replaceChildren();
       if (drag.leg && p) {
-        const other = Object.entries(partLegs(p)).find(([k]) => k !== drag!.leg)![1];
+        const other = p.kind === 'jtag' ? `${p.block}${p.row}${p.col}` : Object.entries(partLegs(p)).find(([k]) => k !== drag!.leg)![1];
         const a = holePos(other)!;
         const target = nearestHoleAt(pt.x, pt.y);
         const b = target ? holePos(target)! : pt;

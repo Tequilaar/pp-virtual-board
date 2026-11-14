@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BLOCKS, COLUMNS, RAIL_PAIRS, dipHole, dipRows } from '../circuit/breadboard';
-import type { Part } from '../circuit/parts';
+import { JTAG_PLUG_PINS, LARGE_POWER_COLS, type Part } from '../circuit/parts';
 import { HEIGHT, P, WIDTH, allHoles, blockBounds, colX, holePos, railBounds, railY, rowY } from './layout';
 import { type LcdViewData, lcdKey, paintLcdCanvas } from './render';
 
@@ -292,6 +292,26 @@ export class View3D {
         break;
       }
       case 'jtag': {
+        if (p.row) {
+          // 8-pin plug, flat cable to the adapter socket left of the board, and the RST lead.
+          const a = hole3(`${p.block}${p.row}${p.col}`);
+          const b = hole3(`${p.block}${p.row}${p.col + 7}`);
+          g.add(box(b.x - a.x + 1.8, 1.2, 1.3, mat(0x1b1b1d), (a.x + b.x) / 2, 0.9, a.z));
+          JTAG_PLUG_PINS.forEach((name, i) => {
+            if (name) g.add(box(0.25, 0.6, 0.25, METAL, a.x + i * P * S, 0.2, a.z));
+          });
+          const xs = toX(4);
+          const xe = a.x - 0.9;
+          g.add(box(xe - xs, 0.12, 1.3, mat(0xb8bcc2), (xs + xe) / 2, 1.5, a.z));
+          g.add(box(1.2, 1.4, 2.0, mat(0x1b1b1d), xs + 0.6, 1.5, a.z));
+          if (p.rst && holePos(p.rst)) {
+            const r = hole3(p.rst, 0.2);
+            const s0 = new THREE.Vector3(a.x - 1.9, 1.5, a.z);
+            const curve = new THREE.CatmullRomCurve3([s0, s0.clone().lerp(r, 0.5).setY(2.2), r.clone().setY(1.0), r]);
+            g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.11, 6), mat(0x9a9ea4)));
+          }
+          break;
+        }
         const e = hole3(`${p.block}E${p.col}`);
         const f = hole3(`${p.block}F${p.col + 4}`);
         g.add(box(f.x - e.x + 2.2, 0.9, f.z - e.z + 1.6, mat(0x1b1b1d), (e.x + f.x) / 2, 0.9, (e.z + f.z) / 2));
@@ -303,9 +323,9 @@ export class View3D {
       }
       case 'power': {
         const x0 = toX(colX(1) - P * 0.8);
-        const x1 = toX(colX(7) + P * 0.4);
-        const zb = toZ(railY(p.railPair, '+') + P * 0.4);
-        const zt = zb - 5.3 * P * S;
+        const x1 = toX(p.large ? colX(LARGE_POWER_COLS) + P * 0.5 : colX(7) + P * 0.4);
+        const zb = toZ(p.large ? railY(p.railPair + 1, '+') + P * 0.5 : railY(p.railPair, '+') + P * 0.4);
+        const zt = toZ(railY(p.railPair, '+') + P * 0.4) - 5.3 * P * S;
         const cx = (x0 + x1) / 2;
         const cz = (zb + zt) / 2;
         g.add(box(x1 - x0, 0.3, zb - zt, mat(0x1f7a3f), cx, 2.2, cz), box(2.4, 1.2, 1.8, METAL, x0 + 1.6, 3.0, zt + 1.5));
@@ -316,6 +336,19 @@ export class View3D {
         led2.position.set(x0 + 6.2, 2.5, zt + 1.2);
         const knob = box(0.8, 0.6, 0.9, mat(0x333333), x0 + 8.5, 2.7, zt + 1.6);
         g.add(led1, led2, knob, leg(`R${p.railPair}+1`, 2.2), leg(`R${p.railPair}-1`, 2.2));
+        if (p.large) {
+          const zr = zt + 5.6 * P * S;
+          const cap = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 2.4, 16), mat(0x1b1b1d));
+          cap.position.set(x0 + 6.6, 3.5, zr + 1.6);
+          g.add(
+            leg(`R${p.railPair + 1}+1`, 2.2),
+            leg(`R${p.railPair + 1}-1`, 2.2),
+            box(3.4, 1.2, 3.0, mat(0x5b5f63), x0 + 2.5, 2.9, zr + 1.5),
+            cap,
+            box(1.4, 0.9, zb - zt - 5 * P * S, mat(0xf5d90a), x1 - 1.7, 2.8, (zt + zb) / 2 + 0.4),
+            box(4.0, 0.8, 2.2, mat(0x5b5f63), x0 + 3.4, 2.7, zb - 2.2),
+          );
+        }
         this.live.power = { led2: led2m, knob };
         break;
       }

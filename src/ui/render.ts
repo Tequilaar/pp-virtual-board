@@ -1,6 +1,6 @@
 /** SVG drawing of the board and its parts. Pure DOM construction, no simulation logic. */
 import { BLOCKS, COLUMNS, RAIL_PAIRS, ROWS, dipHole, dipRows } from '../circuit/breadboard';
-import { DIP40_PINS, type Part } from '../circuit/parts';
+import { DIP40_PINS, JTAG_PLUG_PINS, LARGE_POWER_COLS, type Part } from '../circuit/parts';
 import { HEIGHT, LEFT, P, WIDTH, allHoles, blockBounds, colX, holePos, railBounds, railY, rowY } from './layout';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -252,6 +252,10 @@ export function drawPart(p: Part): SVGGElement {
       break;
     }
     case 'jtag': {
+      if (p.row) {
+        g.append(...drawJtagPlug(p as Extract<Part, { kind: 'jtag' }> & { row: string }));
+        break;
+      }
       const e = holePos(`${p.block}E${p.col}`)!;
       const f = holePos(`${p.block}F${p.col + 4}`)!;
       g.append(svg('rect', { x: e.x - P * 0.5, y: e.y - P * 0.45, width: f.x - e.x + P, height: f.y - e.y + P * 0.9, rx: 2, class: 'jtag-body' }));
@@ -266,9 +270,9 @@ export function drawPart(p: Part): SVGGElement {
     }
     case 'power': {
       const x0 = colX(1) - P * 0.8;
-      const x1 = colX(7) + P * 0.4;
-      const y1 = railY(p.railPair, '+') + P * 0.4;
-      const y0 = y1 - 5.3 * P;
+      const x1 = p.large ? colX(LARGE_POWER_COLS) + P * 0.5 : colX(7) + P * 0.4;
+      const y1 = p.large ? railY(p.railPair + 1, '+') + P * 0.5 : railY(p.railPair, '+') + P * 0.4;
+      const y0 = railY(p.railPair, '+') + P * 0.4 - 5.3 * P;
       g.append(
         svg('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: 3, class: 'pwr-body' }),
         svg('rect', { x: x0 + 4, y: y0 + 6, width: 26, height: 18, rx: 2, class: 'pwr-usb' }),
@@ -282,8 +286,27 @@ export function drawPart(p: Part): SVGGElement {
         svg('text', { x: x0 + 85, y: y0 + 44, class: 'tiny-label' }, ['S']),
         svg('rect', { x: x0 + 10, y: y0 + 32, width: 40, height: 9, rx: 2, class: 'pwr-fuse' }),
         svg('text', { x: x0 + 30, y: y0 + 39, class: 'tiny-label dark' }, ['F']),
-        svg('line', { x1: colX(1), y1: y1 - P * 0.4, x2: colX(1), y2: railY(p.railPair, '+'), class: 'pwr-pin' }),
       );
+      const pins = p.large ? [p.railPair, p.railPair + 1] : [p.railPair];
+      if (p.large) {
+        // The lab board: regulator, smoothing capacitor and the fuse holder along the right edge.
+        const yr = y0 + 5.6 * P;
+        g.append(
+          svg('rect', { x: x0 + 8, y: yr, width: 34, height: 30, rx: 2, class: 'pwr-reg' }),
+          svg('circle', { cx: x0 + 66, cy: yr + 16, r: 13, class: 'pwr-cap' }),
+          svg('circle', { cx: x0 + 66, cy: yr + 16, r: 9, class: 'pwr-cap-top' }),
+          svg('rect', { x: x0 + 12, y: yr + 6 * P, width: 26, height: 22, rx: 2, class: 'pwr-usb' }),
+          svg('rect', { x: x0 + 14, y: y1 - 2.2 * P, width: 40, height: 22, rx: 2, class: 'pwr-reg' }),
+          svg('rect', { x: x1 - 24, y: y0 + 3.2 * P, width: 14, height: y1 - y0 - 5 * P, rx: 2, class: 'pwr-fuse' }),
+          svg('rect', { x: x1 - 21, y: y0 + 4.4 * P, width: 8, height: y1 - y0 - 7.4 * P, rx: 2, class: 'pwr-fuse-glass' }),
+        );
+      }
+      for (const pair of pins) {
+        for (const sign of ['-', '+'] as const) {
+          const y = railY(pair, sign);
+          g.append(svg('rect', { x: colX(1) - 3, y: y - 3, width: 6, height: 6, rx: 1, class: 'pwr-pad' }));
+        }
+      }
       break;
     }
   }
@@ -384,4 +407,43 @@ export function setLcdView(g: SVGGElement, view: LcdViewData | null, blinkPhase:
   lcdCache.set(g, key);
   g.querySelector('.lcd-screen')!.setAttribute('href', paintLcdCanvas(view, blinkPhase).toDataURL());
   g.dataset.text = view ? view.lines.map((l) => l.map((x) => (x >= 0x20 && x < 0x7f ? String.fromCharCode(x) : ' ')).join('')).join('\n') : '';
+}
+
+/**
+ * The adapter's 8-pin plug in one row, its flat cable running left off the board to the 10-pin adapter socket,
+ * and the single RST lead ending in hole `rst`.
+ */
+function drawJtagPlug(p: Extract<Part, { kind: 'jtag' }> & { row: string }): SVGElement[] {
+  const first = holePos(`${p.block}${p.row}${p.col}`)!;
+  const last = holePos(`${p.block}${p.row}${p.col + 7}`)!;
+  const y = first.y;
+  const out: SVGElement[] = [];
+  // Flat cable: 10 conductors, from the plug to the socket in the left margin.
+  const xs = 4;
+  const cable = svg('g', { class: 'jtag-cable' });
+  for (let i = 0; i < 10; i++) {
+    const dy = (i - 4.5) * 1.3;
+    cable.append(svg('line', { x1: xs + 12, y1: y + dy, x2: first.x - P * 0.5, y2: y + dy * 0.45, class: 'jtag-conductor' }));
+  }
+  out.push(cable, svg('rect', { x: xs, y: y - 10, width: 12, height: 20, rx: 1.5, class: 'jtag-body' }));
+  out.push(svg('text', { x: xs + 6, y: y - 12, class: 'tiny-label' }, ['1']), svg('text', { x: xs + 6, y: y + 17, class: 'tiny-label' }, ['10']));
+  // RST lead: one conductor leaves the cable just before the plug.
+  if (p.rst) {
+    const r = holePos(p.rst);
+    if (r) {
+      const sx = first.x - P * 1.2;
+      out.push(
+        svg('path', { d: `M ${sx} ${y} Q ${sx} ${r.y} ${r.x} ${r.y}`, class: 'jtag-lead' }),
+        svg('circle', { cx: r.x, cy: r.y, r: 3.4, class: 'jtag-lead-end' }),
+      );
+    }
+  }
+  out.push(svg('rect', { x: first.x - P * 0.55, y: y - P * 0.45, width: last.x - first.x + P * 1.1, height: P * 0.9, rx: 2, class: 'jtag-body' }));
+  JTAG_PLUG_PINS.forEach((name, i) => {
+    if (!name) return;
+    const x = first.x + i * P;
+    out.push(svg('rect', { x: x - 2.5, y: y - 2.5, width: 5, height: 5, class: 'chip-pin' }));
+    out.push(svg('text', { x, y: y - P * 0.6, class: 'pin-label plug' }, [name]));
+  });
+  return out;
 }

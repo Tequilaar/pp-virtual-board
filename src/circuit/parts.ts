@@ -27,9 +27,17 @@ export type Part =
    * odd pins in row E, even pins in row F, pins 1/2 at column `col`.
    * 1 GND, 2 TDI, 3 n.c., 4 n.c., 5 RST, 6 TMS, 7 VCC, 8 TDO, 9 GND, 10 TCK.
    */
-  | { kind: 'jtag'; id: string; block: number; col: number }
-  /** USB power board: plugs onto the top rail pair (R0) with switch S and fuse F. */
-  | { kind: 'power'; id: string; railPair: number }
+  /**
+   * With `row`: the programming adapter's flat cable ends instead in an 8-pin single-row plug in that row of `block`,
+   * positions `col` … `col + 7`: GND, VCC, –, –, TDI, TDO, TMS, TCK (the two middle positions have no contact),
+   * plus a single RST lead plugged into hole `rst`.
+   */
+  | { kind: 'jtag'; id: string; block: number; col: number; row?: string; rst?: string }
+  /**
+   * USB power board: plugs onto the top rail pair (R0) with switch S and fuse F.
+   * `large`: the lab board, which also reaches down onto rail pair 1 (feeding both pairs) and covers columns 1–11 of block 1.
+   */
+  | { kind: 'power'; id: string; railPair: number; large?: boolean }
   /** ATmega1284P in DIP-40, straddling the gap of `block` with pin 1 at column `col`. */
   /** `bridge`: the chip spans the rail pair below `block` (rows J of `block` / A of `block + 1`) instead of the centre gap. */
   | { kind: 'mcu'; id: string; block: number; col: number; rotated?: boolean; bridge?: boolean };
@@ -57,6 +65,10 @@ export function partLegs(p: Part): Record<string, string> {
     case 'lcd':
       return Object.fromEntries(LCD_PINS.map((name, i) => [name, `${p.block}${p.row}${p.col + i}`]));
     case 'jtag':
+      if (p.row) {
+        const at = (i: number) => `${p.block}${p.row}${p.col + i}`;
+        return { p1: at(0), p7: at(1), p2: at(4), p8: at(5), p6: at(6), p10: at(7), p5: p.rst ?? '' };
+      }
       return Object.fromEntries(JTAG_PINS.map((name, i) => [`p${i + 1}`, `${p.block}${i % 2 === 0 ? 'E' : 'F'}${p.col + Math.floor(i / 2)}`]));
     case 'power':
     case 'mcu':
@@ -68,6 +80,13 @@ export function partLegs(p: Part): Record<string, string> {
 
 /** LCD header pin names in order (pin 1 … 16). */
 export const LCD_PINS = ['VSS', 'VDD', 'VEE', 'RS', 'RW', 'E', 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'LED+', 'LED-'] as const;
+
+/** Columns the plug body covers without a contact (positions 3 and 4). */
+export const JTAG_PLUG_GAPS = [2, 3] as const;
+/** Plug contact names by position (0-based offset from `col`); null = no contact. */
+export const JTAG_PLUG_PINS = ['GND', 'VCC', null, null, 'TDI', 'TDO', 'TMS', 'TCK'] as const;
+/** Columns 1 … this of block 1 lie under the large power board. */
+export const LARGE_POWER_COLS = 11;
 
 /** Programming header, pin 1 … 10. */
 export const JTAG_PINS = ['GND', 'TDI', 'NC', 'NC', 'RST', 'TMS', 'VCC', 'TDO', 'GND', 'TCK'] as const;

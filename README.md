@@ -16,6 +16,8 @@ Ein inoffizielles ATmega1284P-Laborboard im Browser: Steckbrett verdrahten, das 
 **2. Schaltung aufbauen.** Links ein Werkzeug wählen, dann Löcher anklicken:
 - Zweibeinige Bauteile (Draht, Widerstand, LED, Taster, Kondensator, Quarz): erstes Loch, dann zweites Loch. Bei der LED zuerst die Anode (langes Bein).
 - Prozessor: Loch in Reihe E oder F anklicken (er sitzt über der Mittelrille) oder in Reihe J/A (er überbrückt ein Schienenpaar, wie auf dem Laborboard). **R** dreht ihn (vor dem Platzieren oder wenn er ausgewählt ist).
+- Versorgungsplatine: „Laborplatine“ (Standard) ist die große Platine wie im Labor — sie versorgt die beiden oberen Schienenpaare und bedeckt die Spalten 1–11 des ersten Blocks; „klein“ steckt nur auf dem oberen Schienenpaar.
+- JTAG-Adapter: „8-poliger Stecker“ (Standard, wie im Labor) steckt in einer Reihe — angeklicktes Loch = GND, dann VCC, zwei leere Positionen, TDI, TDO, TMS, TCK; die einzelne RST-Leitung steckt zuerst im RESET-Streifen des Prozessors und lässt sich am Ende umstecken. Alternativ die 10-polige Stiftleiste über der Mittelrille.
 - Beim ersten Öffnen erscheint eine kurze Anleitung (Deutsch, Englisch, Chinesisch); „? Anleitung“ zeigt sie jederzeit wieder.
 - Beim Überfahren eines Lochs zeigt die Fußzeile Loch, Prozessor-Pin und Spannung; alle Löcher desselben Kontaktstreifens leuchten auf.
 - Verschieben: mit „Auswählen“ ziehen; ein Beinende ziehen steckt nur dieses Bein um. Rückgängig/Wiederholen: ⌘/Strg+Z, ⌘/Strg+Y oder die Knöpfe oben.
@@ -58,6 +60,8 @@ An unofficial ATmega1284P lab board that runs in the browser: wire a breadboard,
 **2. Build the circuit.** Pick a tool on the left, then click holes:
 - Two-leg parts (wire, resistor, LED, push button, capacitor, crystal): first hole, then second hole. For an LED, click the anode (long leg) first.
 - Chip: click a hole in row E or F (it straddles the centre gap) or in row J/A (it spans a rail pair, as on the lab board). Press **R** before placing it, or with it selected, to turn it.
+- Power board: “Lab board” (default) is the large board as in the lab — it feeds the two top rail pairs and covers columns 1–11 of the first block; “small” sits on the top rail pair only.
+- JTAG adapter: the “8-pin plug” (default, as in the lab) sits in one row — clicked hole = GND, then VCC, two empty positions, TDI, TDO, TMS, TCK; the single RST lead starts in the chip’s RESET strip and its end can be re-plugged. Alternatively the 10-pin header across the centre gap.
 - A short guide (German, English, Chinese) opens on first visit; “? Anleitung” shows it again at any time.
 - Hovering a hole shows hole, chip pin and voltage; all holes of the same strip light up.
 - Move parts by dragging them with “Auswählen”; dragging a leg end re-plugs just that leg. Undo/redo: ⌘/Ctrl+Z, ⌘/Ctrl+Y, or the buttons at the top.
@@ -102,6 +106,8 @@ Unofficial project, not affiliated with any university or course. Some model par
 左侧选工具，然后在面包板上点孔：
 - **两脚元件**（导线、电阻、LED、按钮、电容、晶振）：先点第一个孔，再点第二个孔。LED 先点正极（长脚）。
 - **芯片**：在 E 或 F 行点一下，芯片跨在中间槽上；在 J/A 行点一下，芯片跨过一对电源轨（和实验室的板子一样）。放置前或选中后按 **R** 旋转。
+- **电源板**：默认“实验室电源板”，和实验室的大电源板一样，同时给上面两对电源轨供电，并盖住第 1 块的 1–11 列；选“小电源板”则只插在最上方一对电源轨上。
+- **JTAG 编程接口**：默认“8 针插头”（和实验室一样），插在同一行里：点的孔是 GND，接着是 VCC、两个空位、TDI、TDO、TMS、TCK；单独的 RST 线先插在处理器 RESET 脚那一列，拖线头可以改插。也可以改用跨中间槽的 10 针排针。
 - 第一次打开时会弹出简短的使用说明（德 / 英 / 中三语）；点“? Anleitung”可随时再看。
 - 鼠标悬停在孔上，底栏会显示孔位、芯片引脚和电压；同一导通条的孔会高亮。
 - **移动**：用“Auswählen”拖动元件；拖元件的脚端只换这一只脚。**撤销 / 重做**：⌘/Ctrl+Z、⌘/Ctrl+Y，或顶栏按钮。

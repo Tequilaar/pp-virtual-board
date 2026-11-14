@@ -254,3 +254,47 @@ describe('chip across a rail pair (bridge)', () => {
     expect(mA(b.ledCurrent('led1'))).toBeGreaterThan(6.5);
   });
 });
+
+describe('programming adapter with the 8-pin plug', () => {
+  // Chip at 1F16: top row block 1 row E — GND 25, AVCC 26, PC7 27, PC6 28, TDI 29, TDO 30, TMS 31, TCK 32; RESET at 1F24.
+  const plug = (over: Partial<Extract<Part, { kind: 'jtag' }>> = {}): Part => ({ kind: 'jtag', id: 'JTAG', block: 1, row: 'C', col: 25, rst: '1H24', ...over });
+  it('contacts sit side by side in one row, the two middle positions are covered', () => {
+    const parts = [...basicSetup(), plug()];
+    expect(validateParts(parts)).toEqual([]);
+    expect(validateParts([...parts, { kind: 'wire', id: 'w', a: '1B27', b: '1C27' }]).map((p) => p.code)).toEqual(['hole-used-twice']);
+    expect(validateParts([...basicSetup(), plug({ col: 54 })]).map((p) => p.code)).toEqual(['bad-hole']);
+    expect(validateParts([...basicSetup(), plug({ row: 'K' })]).map((p) => p.code)).toContain('bad-hole');
+  });
+  it('plugged over the chip columns, programming works', () => {
+    const b = mk([...basicSetup(), plug()]);
+    b.run(MS);
+    expect(b.jtagCheck()).toEqual([]);
+  });
+  it('one column off or RST lead in the wrong strip: the check names the signals', () => {
+    const shifted = mk([...basicSetup(), plug({ col: 24, rst: '1H24' })]);
+    shifted.run(MS);
+    expect(shifted.jtagCheck()).toEqual(expect.arrayContaining(['TCK-PC2', 'GND1']));
+    const rst = mk([...basicSetup(), plug({ rst: '1H23' })]);
+    rst.run(MS);
+    expect(rst.jtagCheck()).toEqual(['RST-RESET']);
+  });
+});
+
+describe('lab power board (large)', () => {
+  const large = (): Part[] => [{ kind: 'power', id: 'power', railPair: 0, large: true }, ...without(basicSetup(), 'power', 'w+', 'w-')];
+  it('feeds rail pairs 0 and 1 without jumpers', () => {
+    expect(validateParts(large())).toEqual([]);
+    const b = mk(large(), fw('led_pd0'));
+    b.run(MS);
+    expect(b.status.powered).toBe(true);
+    expect(b.status.running).toBe(true);
+    expect(mA(b.ledCurrent('led1'))).toBeGreaterThan(6.5);
+  });
+  it('covers block 1 columns 1–11 and the top rail pair there; rail pair 1 stays free', () => {
+    const with_ = (w: Part) => validateParts([...large(), w]).map((p) => p.code);
+    expect(with_({ kind: 'wire', id: 'w', a: '1C5', b: '2C5' })).toEqual(['hole-used-twice']);
+    expect(with_({ kind: 'wire', id: 'w', a: 'R0+5', b: 'R2+5' })).toEqual(['hole-used-twice']);
+    expect(with_({ kind: 'wire', id: 'w', a: 'R1+5', b: 'R2+5' })).toEqual([]);
+    expect(with_({ kind: 'wire', id: 'w', a: '1C12', b: '2C12' })).toEqual([]);
+  });
+});

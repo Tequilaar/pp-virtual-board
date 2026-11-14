@@ -105,6 +105,15 @@ svg.board { height: auto; display: block; user-select: none; }
 main.mode-3d #board-wrap { display: none; }
 main.mode-3d .tools button[data-tool] { opacity: .45; pointer-events: none; }
 .jtag-body { fill: #1b1b1d; }
+.jtag-cable { pointer-events: none; opacity: .9; }
+.jtag-conductor { stroke: #b8bcc2; stroke-width: 1.2; }
+.jtag-lead { fill: none; stroke: #9a9ea4; stroke-width: 2; pointer-events: none; }
+.jtag-lead-end { fill: none; stroke: #1b1b1d; stroke-width: 1.6; }
+.pin-label.plug { font-size: 5px; fill: #333; font-weight: 600; }
+.pwr-pad { fill: #c0c4c9; }
+.pwr-reg { fill: #5b5f63; }
+.pwr-cap { fill: #1b1b1d; } .pwr-cap-top { fill: #f2f2f2; }
+.pwr-fuse-glass { fill: #f2f2f2; opacity: .8; }
 #meter-status { font-size: 13px; margin: 6px 0; font-variant-numeric: tabular-nums; }
 #meter-status b { font-size: 16px; }
 .probe-red { fill: #e5484d; stroke: #7a1515; } .probe-black { fill: #222; stroke: #000; }

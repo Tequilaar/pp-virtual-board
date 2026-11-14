@@ -32,6 +32,9 @@
       <h2 data-t="tools"></h2>
       <button data-tool="select" data-t="select"></button>
       <button data-tool="power" data-t="power"></button>
+      <select id="power-style" aria-label="power board">
+        <option value="large" data-t="powerLarge"></option><option value="small" data-t="powerSmall"></option>
+      </select>
       <button data-tool="mcu" data-t="mcu"></button>
       <button data-tool="wire" data-t="wire"></button>
       <select id="wire-color" aria-label="wire colour">
@@ -57,6 +60,9 @@
       <button data-tool="servo" data-t="servo"></button>
       <button data-tool="lcd" data-t="lcd"></button>
       <button data-tool="jtag" data-t="jtag"></button>
+      <select id="jtag-style" aria-label="programming connector">
+        <option value="plug" data-t="jtagPlug"></option><option value="header" data-t="jtagHeader"></option>
+      </select>
       <button data-tool="meter" data-t="meter"></button>
     </aside>
     <section id="board-wrap"></section>

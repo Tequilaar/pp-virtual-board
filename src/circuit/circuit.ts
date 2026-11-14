@@ -132,6 +132,13 @@ export class Circuit {
         case 'power':
           use(railHole(p.railPair, '+', 1), p.id);
           use(railHole(p.railPair, '-', 1), p.id);
+          if (p.large) {
+            // The lab board also plugs onto the next rail pair and connects it to the first one.
+            for (const sign of ['+', '-'] as const) {
+              use(railHole(p.railPair + 1, sign, 1), p.id);
+              uf.union(railHole(p.railPair, sign, 1), railHole(p.railPair + 1, sign, 1));
+            }
+          }
           break;
         case 'mcu':
           for (let n = 1; n <= 40; n++) use(dipHole(p.block, p.col, 40, n, p.rotated, p.bridge), p.id);
